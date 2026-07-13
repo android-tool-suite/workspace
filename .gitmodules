@@ -1,0 +1,9 @@
+[submodule "app"]
+	path = app
+	url = https://github.com/songhaorun/android-tool-suite-app.git
+[submodule "plugins/accessibility-grant"]
+	path = plugins/accessibility-grant
+	url = https://github.com/songhaorun/android-tool-suite-plugin-accessibility-grant.git
+[submodule "plugins/phigros-advisor"]
+	path = plugins/phigros-advisor
+	url = https://github.com/songhaorun/android-tool-suite-plugin-phigros-advisor.git
