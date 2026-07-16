@@ -7,3 +7,6 @@
 [submodule "plugins/phigros-advisor"]
 	path = plugins/phigros-advisor
 	url = https://github.com/songhaorun/android-tool-suite-plugin-phigros-advisor.git
+[submodule "plugins/gacha-analysis"]
+	path = plugins/gacha-analysis
+	url = https://github.com/songhaorun/android-tool-suite-plugin-gacha-analysis.git

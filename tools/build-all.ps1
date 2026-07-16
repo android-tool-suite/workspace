@@ -12,6 +12,7 @@ $workspaceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $appRoot = Join-Path $workspaceRoot 'app'
 $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
+$gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
 $sdkRepository = Join-Path $appRoot 'plugin-sdk\build\repository'
 $stagingDirectory = Join-Path $workspaceRoot 'build\distribution-staging'
 $outputDirectory = Join-Path $workspaceRoot 'artifacts'
@@ -20,7 +21,8 @@ function Assert-WorkspaceLayout {
     $required = @(
         (Join-Path $appRoot 'settings.gradle'),
         (Join-Path $accessibilityRoot 'settings.gradle'),
-        (Join-Path $phigrosRoot 'settings.gradle')
+        (Join-Path $phigrosRoot 'settings.gradle'),
+        (Join-Path $gachaRoot 'settings.gradle')
     )
     foreach ($path in $required) {
         if (-not (Test-Path -LiteralPath $path)) {
@@ -93,6 +95,10 @@ if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $phigrosRoot, $sdkProperty, 'testDebugUnitTest')
 }
 Invoke-Native $gradle.Source (@('-p', $phigrosRoot, $sdkProperty) + $buildTasks)
+if (-not $SkipTests) {
+    Invoke-Native $gradle.Source @('-p', $gachaRoot, $sdkProperty, 'testDebugUnitTest')
+}
+Invoke-Native $gradle.Source (@('-p', $gachaRoot, $sdkProperty) + $buildTasks)
 
 $artifacts = @(
     [pscustomobject]@{
@@ -106,6 +112,10 @@ $artifacts = @(
     [pscustomobject]@{
         Name = 'phigros-advisor.atsplugin'
         Source = Join-Path $phigrosRoot 'artifacts\phigros-advisor.atsplugin'
+    },
+    [pscustomobject]@{
+        Name = 'gacha-analysis.atsplugin'
+        Source = Join-Path $gachaRoot 'artifacts\gacha-analysis.atsplugin'
     }
 )
 
@@ -143,9 +153,11 @@ $manifest = [ordered]@{
         app = Get-NativeOutput 'git' @('-c', "safe.directory=$appRoot", '-C', $appRoot, 'rev-parse', 'HEAD')
         accessibilityGrant = Get-NativeOutput 'git' @('-c', "safe.directory=$accessibilityRoot", '-C', $accessibilityRoot, 'rev-parse', 'HEAD')
         phigrosAdvisor = Get-NativeOutput 'git' @('-c', "safe.directory=$phigrosRoot", '-C', $phigrosRoot, 'rev-parse', 'HEAD')
+        gachaAnalysis = Get-NativeOutput 'git' @('-c', "safe.directory=$gachaRoot", '-C', $gachaRoot, 'rev-parse', 'HEAD')
     }
     tests = [ordered]@{
         phigrosDebugUnitTest = -not $SkipTests
+        gachaDebugUnitTest = -not $SkipTests
     }
     artifacts = @($manifestArtifacts)
 }

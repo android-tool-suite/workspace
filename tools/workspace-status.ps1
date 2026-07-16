@@ -45,7 +45,8 @@ $repositories = @(
     [pscustomobject]@{ Name = 'workspace'; Path = $workspaceRoot; Build = $null },
     [pscustomobject]@{ Name = 'app'; Path = (Join-Path $workspaceRoot 'app'); Build = (Join-Path $workspaceRoot 'app\app\build.gradle') },
     [pscustomobject]@{ Name = 'accessibility-grant'; Path = (Join-Path $workspaceRoot 'plugins\accessibility-grant'); Build = (Join-Path $workspaceRoot 'plugins\accessibility-grant\build.gradle') },
-    [pscustomobject]@{ Name = 'phigros-advisor'; Path = (Join-Path $workspaceRoot 'plugins\phigros-advisor'); Build = (Join-Path $workspaceRoot 'plugins\phigros-advisor\build.gradle') }
+    [pscustomobject]@{ Name = 'phigros-advisor'; Path = (Join-Path $workspaceRoot 'plugins\phigros-advisor'); Build = (Join-Path $workspaceRoot 'plugins\phigros-advisor\build.gradle') },
+    [pscustomobject]@{ Name = 'gacha-analysis'; Path = (Join-Path $workspaceRoot 'plugins\gacha-analysis'); Build = (Join-Path $workspaceRoot 'plugins\gacha-analysis\build.gradle') }
 )
 
 $dirty = $false

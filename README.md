@@ -1,10 +1,11 @@
 # Android Tool Suite Workspace
 
-此仓库是 Android Tool Suite 的外层工作区，使用 Git 子模块组合主体应用和两个外部插件：
+此仓库是 Android Tool Suite 的外层工作区，使用 Git 子模块组合主体应用和三个外部插件：
 
 - `app`：主体应用与插件 SDK。
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
+- `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
 
 ## 获取工作区
 
@@ -34,7 +35,8 @@ git submodule update --init --recursive
 2. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
 3. 使用该临时 SDK 构建无障碍插件。
 4. 运行 Phigros 插件 JVM 测试并构建插件。
-5. 所有步骤成功后，将三个产物、SHA-256 校验和与构建清单复制到外层 `artifacts/`。
+5. 运行抽卡分析插件 JVM 测试并构建插件。
+6. 所有步骤成功后，将四个产物、SHA-256 校验和与构建清单复制到外层 `artifacts/`。
 
 开发中需要增量构建或临时跳过测试时：
 
@@ -49,6 +51,7 @@ git submodule update --init --recursive
 artifacts/
 ├─ android-tool-suite-debug.apk
 ├─ accessibility-grant.atsplugin
+├─ gacha-analysis.atsplugin
 ├─ phigros-advisor.atsplugin
 ├─ SHA256SUMS.txt
 └─ build-manifest.json
@@ -69,8 +72,9 @@ artifacts/
 .\tools\install-latest.ps1
 .\tools\install-latest.ps1 -Serial <设备序列号>
 .\tools\install-latest.ps1 -Serial <设备序列号> -Plugins accessibility-grant
+.\tools\install-latest.ps1 -Serial <设备序列号> -Plugins gacha-analysis
 ```
 
-安装脚本默认先安装主体 Debug APK，再通过主体的 Debug ADB Receiver 导入两个插件。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
+安装脚本默认先安装主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。

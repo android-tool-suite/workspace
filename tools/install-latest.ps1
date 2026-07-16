@@ -2,7 +2,7 @@
 param(
     [string]$Serial,
     [switch]$SkipApp,
-    [ValidateSet('all', 'accessibility-grant', 'phigros-advisor', 'none')]
+    [ValidateSet('all', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'none')]
     [string]$Plugins = 'all'
 )
 
@@ -70,7 +70,7 @@ if (-not $SkipApp) {
 }
 
 $pluginNames = switch ($Plugins) {
-    'all' { @('accessibility-grant', 'phigros-advisor') }
+    'all' { @('accessibility-grant', 'phigros-advisor', 'gacha-analysis') }
     'none' { @() }
     default { @($Plugins) }
 }
