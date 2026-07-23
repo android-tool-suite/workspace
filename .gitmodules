@@ -1,12 +1,12 @@
 [submodule "app"]
 	path = app
-	url = https://github.com/songhaorun/android-tool-suite-app.git
+	url = https://github.com/android-tool-suite/app.git
 [submodule "plugins/accessibility-grant"]
 	path = plugins/accessibility-grant
-	url = https://github.com/songhaorun/android-tool-suite-plugin-accessibility-grant.git
+	url = https://github.com/android-tool-suite/plugin-accessibility-grant.git
 [submodule "plugins/phigros-advisor"]
 	path = plugins/phigros-advisor
-	url = https://github.com/songhaorun/android-tool-suite-plugin-phigros-advisor.git
+	url = https://github.com/android-tool-suite/plugin-phigros-advisor.git
 [submodule "plugins/gacha-analysis"]
 	path = plugins/gacha-analysis
-	url = https://github.com/songhaorun/android-tool-suite-plugin-gacha-analysis.git
+	url = https://github.com/android-tool-suite/plugin-gacha-analysis.git

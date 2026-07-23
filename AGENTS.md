@@ -29,12 +29,14 @@ android-tool-suite/
 
 可以在工作区根目录使用 Git 管理 `.gitmodules`、工作区文档和子模块指针，但不要假定存在根级 Gradle 任务。源码状态检查、构建、版本、更新日志和提交仍以 `app/`、`plugins/accessibility-grant/`、`plugins/phigros-advisor/`、`plugins/gacha-analysis/` 中相应的子仓库为边界。跨仓库修改时，先分别完成并提交子仓库，再在外层仓库提交更新后的子模块指针。
 
+外层仓库是集成工作区，不是日常功能开发仓库。开发单个宿主或插件时，允许只克隆和使用对应独立仓库；普通组件提交不需要同步更新外层 gitlink。只有联调未发布 SDK、执行完整兼容性验收、集中交付，或明确提升已验证组合时才使用外层工作区。更新 gitlink 前必须确认组件提交已推送且通过对应验证；外层提交只描述集成基线变化，不重复承载组件功能内容。
+
 四个子模块的 `origin` 和 `.gitmodules` 都使用 HTTPS：
 
-- `https://github.com/songhaorun/android-tool-suite-app.git`
-- `https://github.com/songhaorun/android-tool-suite-plugin-accessibility-grant.git`
-- `https://github.com/songhaorun/android-tool-suite-plugin-phigros-advisor.git`
-- `https://github.com/songhaorun/android-tool-suite-plugin-gacha-analysis.git`
+- `https://github.com/android-tool-suite/app.git`
+- `https://github.com/android-tool-suite/plugin-accessibility-grant.git`
+- `https://github.com/android-tool-suite/plugin-phigros-advisor.git`
+- `https://github.com/android-tool-suite/plugin-gacha-analysis.git`
 
 首次检出使用 `git clone --recurse-submodules`；已有检出使用 `git submodule sync --recursive` 和 `git submodule update --init --recursive`。不要把子模块改回 SSH URL，也不要直接提交只有外层 gitlink 更新、却没有对应远端子仓库提交的状态。
 
@@ -129,6 +131,7 @@ gradle -p plugins\gacha-analysis `
 - `plugin-sdk` 或跨仓库协议变更：主体、三个插件全部重新构建，并运行 Phigros 与抽卡分析单元测试。
 - 跨仓库或正式全量验收：运行 `.\tools\build-all.ps1`，不使用 `-SkipTests`。
 - 文档或配置改动：至少运行对应仓库的 `git diff --check`，并核对示例命令与当前目录结构一致。
+- 外层 CI 只验证 gitlink 锁定的组件组合，不替代各组件仓库自己的最小充分构建和测试。
 
 需要设备验证时，优先使用带图形界面的 Android Emulator：先观察真实 UI 和交互，再用 ADB 安装、切换状态、抓日志和截图。GUI Emulator、ADB 与 Shizuku 可以在同一调试流程中同时使用；`-no-window` 只隐藏模拟器窗口，不会关闭 ADB。完整流程以 `app/docs/adb-debugging.md` 为准。
 
@@ -183,6 +186,8 @@ adb -s <实体设备序列号> install -r -t .\app\artifacts\android-tool-suite-
 - `local.properties`、IDE 配置、缓存和构建目录不得提交。
 - 用户要求整理并提交时，把“删除可再生产物”和“功能修改”分开处理；按仓库和关注点拆成多个小提交，不要生成跨多个仓库的单体提交。
 - 提交跨仓库修改时，顺序必须是：完成子仓库版本与更新日志检查、验证并提交子仓库、推送或确认对应提交可供外层仓库获取，最后提交外层仓库的子模块指针。外层仓库本身没有应用版本号，单纯更新 gitlink、`.gitmodules` 或工作区文档不触发子仓库版本提升。
+- 不要因为子仓库 HEAD 超前于外层锁定提交就自动更新 gitlink；这通常只是组件独立开发中的正常集成滞后。使用 `.\tools\workspace-status.ps1` 区分源码脏、HEAD 超前、gitlink 已暂存和提交尚未发布。
+- 外层 gitlink 提交使用集成语义，例如 `build: update app integration baseline`，不要复制子仓库的功能提交信息。
 - 提交信息沿用现有简洁的 Conventional Commit 风格，如 `feat:`、`fix:`、`refactor:`、`build:`、`docs:`。
 - 当用户已经测试并接受一个完整、可独立回滚的部分，且授权了提交工作时，应及时在对应仓库提交，不要让已验收内容长期处于未提交状态。
 - 如果 Git 因无法创建 `.git/index.lock` 报权限错误，先核对没有并发 Git 进程，再使用所需权限重试；不要据此判断仓库损坏。`git fsck` 中只有 dangling tree/object 而没有实际读写或构建异常时，通常只是历史对象信息。

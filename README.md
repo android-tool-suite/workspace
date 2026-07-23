@@ -1,11 +1,22 @@
 # Android Tool Suite Workspace
 
-此仓库是 Android Tool Suite 的外层工作区，使用 Git 子模块组合主体应用和三个外部插件：
+此仓库是 Android Tool Suite 的**集成工作区**，使用 Git 子模块锁定一组经过验证的主体应用和插件版本：
 
 - `app`：主体应用与插件 SDK。
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
 - `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
+
+四个子模块是彼此独立的权威源码仓库，分别维护提交、版本、更新日志和发布。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
+
+只有以下场景需要使用本集成工作区：
+
+- 联调尚未发布的 `plugin-sdk`。
+- 对主体和插件执行完整兼容性验收。
+- 更新某个组件的已验证集成基线。
+- 集中生成并安装一组可追溯的交付产物。
+
+子模块普通功能提交不应立即更新外层 gitlink。只有对应提交已经推送、完成组件验证并需要进入已验证组合时，才在外层仓库更新指针。
 
 ## 获取工作区
 
@@ -20,6 +31,14 @@ cd android-tool-suite
 git submodule sync --recursive
 git submodule update --init --recursive
 ```
+
+只开发单个组件时，直接克隆其独立仓库，例如：
+
+```powershell
+git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
+```
+
+插件只通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码。独立构建前需要先准备其 `gradle.properties` 中 `atsPluginSdkVersion` 对应的 SDK；联调未发布 SDK 时再使用本工作区的临时 Maven 仓库流程。
 
 ## 一键构建
 
@@ -59,12 +78,26 @@ artifacts/
 
 ## 开发辅助工具
 
-检查外层仓库和所有子模块的分支、提交、工作区状态、remote、版本、更新日志及现有产物：
+检查外层仓库和所有子模块的集成状态：
 
 ```powershell
 .\tools\workspace-status.ps1
 .\tools\workspace-status.ps1 -FailOnDirty
 ```
+
+状态表会分别显示：
+
+- `SourceDirty`：组件源码是否存在未提交修改。
+- `Head` / `Locked` / `LockState`：当前组件提交与外层已提交 gitlink 的关系。
+- `GitlinkStaged`：新的 gitlink 是否已经暂存但尚未提交。
+- `PublishState`：本地 remote-tracking refs 是否包含当前提交。
+- `BaselineState`：当前提交是否可以安全更新为集成基线。
+
+`PublishState` 是不联网的快速检查；更新远端状态后可先在对应组件仓库执行 `git fetch --prune`。`-FailOnDirty` 只针对真正的源码或外层文件修改失败，不会把“组件 HEAD 超前于锁定版本”误判为源码脏。
+
+## 集成 CI
+
+外层 GitHub Actions 在 gitlink、全量构建脚本或集成工作流变化时检出精确子模块版本，并运行不跳过测试的 `build-all.ps1`。组件仓库仍应运行各自范围内的构建和测试；外层 CI 只验证组合，不替代组件 CI。
 
 完整构建并通过模拟器测试后，把最新集中产物安装到实体设备。仅连接一个实体设备时可自动选择；多设备时必须指定 serial：
 
