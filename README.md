@@ -99,6 +99,18 @@ artifacts/
 
 外层 GitHub Actions 在 gitlink、全量构建脚本或集成工作流变化时检出精确子模块版本，并运行不跳过测试的 `build-all.ps1`。组件仓库仍应运行各自范围内的构建和测试；外层 CI 只验证组合，不替代组件 CI。
 
+## GitHub Release 与插件仓库
+
+主体和三个插件各自在自己的仓库通过 `v<versionName>` 标签发布 GitHub Release。组件工作流会校验版本、CHANGELOG、测试和正式产物，再上传固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
+
+运行时插件目录由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，不作为本工作区的子模块。它通过 GitHub Pages 聚合四个组件的 latest stable Release，使用 ECDSA 签名 `index-v1.json`。宿主从该索引检查自身和插件更新，并在下载后校验签名、大小与 SHA-256。
+
+插件仓库与外层工作区职责不同：
+
+- `plugin-registry` 是面向已安装应用的运行时分发索引。
+- `workspace` 锁定经过完整构建验证的四个源码提交。
+- 发布组件不会自动移动外层 gitlink；只有完成 Release 和集成验收后才提升外层基线。
+
 完整构建并通过模拟器测试后，把最新集中产物安装到实体设备。仅连接一个实体设备时可自动选择；多设备时必须指定 serial：
 
 ```powershell
