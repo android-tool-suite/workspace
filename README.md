@@ -1,4 +1,4 @@
-# Android Tool Suite Workspace
+# Android Tool Suite 集成工作区
 
 此仓库是 Android Tool Suite 的**集成工作区**，使用 Git 子模块锁定一组经过验证的主体应用和插件版本：
 
@@ -6,8 +6,9 @@
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
 - `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
+- `plugin-registry`：正式/调试插件索引、签名和 GitHub Pages 展示页。
 
-四个子模块是彼此独立的权威源码仓库，分别维护提交、版本、更新日志和发布。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
+五个子模块是彼此独立的权威源码仓库，分别维护提交和发布边界。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
 
 只有以下场景需要使用本集成工作区：
 
@@ -38,6 +39,12 @@ git submodule update --init --recursive
 git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
 ```
 
+运行时索引已经作为第五个子模块固定在 `plugin-registry/`。只维护索引生成器时，也可以单独克隆它：
+
+```powershell
+git clone https://github.com/android-tool-suite/plugin-registry.git
+```
+
 插件只通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码。独立构建前需要先准备其 `gradle.properties` 中 `atsPluginSdkVersion` 对应的 SDK；联调未发布 SDK 时再使用本工作区的临时 Maven 仓库流程。
 
 ## 一键构建
@@ -50,12 +57,13 @@ git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
 
 脚本按以下顺序执行：
 
-1. 构建主体 APK。
-2. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
-3. 使用该临时 SDK 构建无障碍插件。
-4. 运行 Phigros 插件 JVM 测试并构建插件。
-5. 运行抽卡分析插件 JVM 测试并构建插件。
-6. 所有步骤成功后，将四个产物、SHA-256 校验和与构建清单复制到外层 `artifacts/`。
+1. 运行插件索引生成器的纯 Python 单元测试。
+2. 构建主体 APK。
+3. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
+4. 使用该临时 SDK 构建无障碍插件。
+5. 运行 Phigros 插件 JVM 测试并构建插件。
+6. 运行抽卡分析插件 JVM 测试并构建插件。
+7. 所有步骤成功后，将四个产物、SHA-256 校验和与包含五个子模块提交号的构建清单复制到外层 `artifacts/`。
 
 开发中需要增量构建或临时跳过测试时：
 
@@ -101,14 +109,16 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和三个插件各自在自己的仓库通过 `v<versionName>` 标签发布 GitHub Release。组件工作流会校验版本、CHANGELOG、测试和正式产物，再上传固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
+主体和三个插件都支持两个发布通道：`main` 分支 CI 成功后更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
 
-运行时插件目录由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，不作为本工作区的子模块。它通过 GitHub Pages 聚合四个组件的 latest stable Release，使用 ECDSA 签名 `index-v1.json`。宿主从该索引检查自身和插件更新，并在下载后校验签名、大小与 SHA-256。
+运行时插件目录由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区的第五个子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 GitHub Pages 分别发布 ECDSA 签名的正式、调试索引。组件发布完成后发送事件触发索引重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
+
+Release 应用默认使用正式插件仓库，但可在仓库页主动切换到调试仓库；Debug 应用默认使用调试仓库。未推送远程的 `.atsplugin` 仍可从同一页面本地导入，并明确显示为未经仓库验证。
 
 插件仓库与外层工作区职责不同：
 
 - `plugin-registry` 是面向已安装应用的运行时分发索引。
-- `workspace` 锁定经过完整构建验证的四个源码提交。
+- `workspace` 锁定经过完整构建与索引测试验证的五个源码提交。
 - 发布组件不会自动移动外层 gitlink；只有完成 Release 和集成验收后才提升外层基线。
 
 完整构建并通过模拟器测试后，把最新集中产物安装到实体设备。仅连接一个实体设备时可自动选择；多设备时必须指定 serial：

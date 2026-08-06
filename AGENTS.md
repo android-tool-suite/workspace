@@ -4,11 +4,11 @@
 
 本文件适用于 `android-tool-suite/` 下的整个聚合工作区。若子目录以后出现更具体的 `AGENTS.md`，以离目标文件最近的说明为准。
 
-当前工作区由一个外层 Git 超级项目和四个独立 Git 子模块组成，但仍然没有统一的根级 Gradle 工程：
+当前工作区由一个外层 Git 超级项目和五个独立 Git 子模块组成，但仍然没有统一的根级 Gradle 工程：
 
 ```text
 android-tool-suite/
-├─ .gitmodules                    四个子模块的 HTTPS 地址
+├─ .gitmodules                    五个子模块的 HTTPS 地址
 ├─ AGENTS.md                      整个工作区的协作规则
 ├─ tools/                         全量构建、状态检查与设备安装工具
 ├─ artifacts/                     全量构建集中产物（Git 忽略）
@@ -18,6 +18,7 @@ android-tool-suite/
 │  ├─ docs/                       插件包格式与 ADB 调试文档
 │  ├─ tools/adb-debug.ps1         Debug APK 的 ADB 操作封装
 │  └─ artifacts/                  android-tool-suite-debug.apk
+├─ plugin-registry/               正式/调试插件索引、签名与 Pages 展示页
 └─ plugins/
    ├─ accessibility-grant/        无障碍授权插件仓库
    │  └─ artifacts/               accessibility-grant.atsplugin
@@ -27,13 +28,14 @@ android-tool-suite/
       └─ artifacts/               gacha-analysis.atsplugin
 ```
 
-可以在工作区根目录使用 Git 管理 `.gitmodules`、工作区文档和子模块指针，但不要假定存在根级 Gradle 任务。源码状态检查、构建、版本、更新日志和提交仍以 `app/`、`plugins/accessibility-grant/`、`plugins/phigros-advisor/`、`plugins/gacha-analysis/` 中相应的子仓库为边界。跨仓库修改时，先分别完成并提交子仓库，再在外层仓库提交更新后的子模块指针。
+可以在工作区根目录使用 Git 管理 `.gitmodules`、工作区文档和子模块指针，但不要假定存在根级 Gradle 任务。源码状态检查和提交仍以 `app/`、`plugin-registry/`、`plugins/accessibility-grant/`、`plugins/phigros-advisor/`、`plugins/gacha-analysis/` 中相应的子仓库为边界；应用和插件继续独立维护版本与更新日志，索引仓库则维护生成器、签名协议和 Pages 发布。跨仓库修改时，先分别完成并提交子仓库，再在外层仓库提交更新后的子模块指针。
 
 外层仓库是集成工作区，不是日常功能开发仓库。开发单个宿主或插件时，允许只克隆和使用对应独立仓库；普通组件提交不需要同步更新外层 gitlink。只有联调未发布 SDK、执行完整兼容性验收、集中交付，或明确提升已验证组合时才使用外层工作区。更新 gitlink 前必须确认组件提交已推送且通过对应验证；外层提交只描述集成基线变化，不重复承载组件功能内容。
 
-四个子模块的 `origin` 和 `.gitmodules` 都使用 HTTPS：
+五个子模块的 `origin` 和 `.gitmodules` 都使用 HTTPS：
 
 - `https://github.com/android-tool-suite/app.git`
+- `https://github.com/android-tool-suite/plugin-registry.git`
 - `https://github.com/android-tool-suite/plugin-accessibility-grant.git`
 - `https://github.com/android-tool-suite/plugin-phigros-advisor.git`
 - `https://github.com/android-tool-suite/plugin-gacha-analysis.git`
@@ -58,7 +60,7 @@ android-tool-suite/
 .\tools\build-all.ps1
 ```
 
-该脚本构建主体、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，最后把四个产物、`SHA256SUMS.txt` 和带子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
+该脚本构建主体、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，同时运行插件索引生成器测试，最后把四个产物、`SHA256SUMS.txt` 和带五个子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
 
 主体应用：
 
@@ -128,6 +130,7 @@ gradle -p plugins\gacha-analysis `
 - 仅无障碍插件：先确保 SDK 可解析，再运行该仓库的 `clean collectArtifacts`。
 - 仅 Phigros 插件：运行 `testDebugUnitTest` 和 `clean collectArtifacts`。
 - 仅抽卡分析插件：运行 `testDebugUnitTest` 和 `clean collectArtifacts`。
+- 仅插件索引：运行 `python -m unittest discover -s plugin-registry/tests -v` 和对应仓库的 `git diff --check`。
 - `plugin-sdk` 或跨仓库协议变更：主体、三个插件全部重新构建，并运行 Phigros 与抽卡分析单元测试。
 - 跨仓库或正式全量验收：运行 `.\tools\build-all.ps1`，不使用 `-SkipTests`。
 - 文档或配置改动：至少运行对应仓库的 `git diff --check`，并核对示例命令与当前目录结构一致。
@@ -181,7 +184,7 @@ adb -s <实体设备序列号> install -r -t .\app\artifacts\android-tool-suite-
 
 ## 清理、Git 与提交
 
-- 开始前在外层仓库运行 `git status --short`，并分别使用 `git -C app status --short`、`git -C plugins/accessibility-grant status --short`、`git -C plugins/phigros-advisor status --short`、`git -C plugins/gacha-analysis status --short` 检查子仓库，保留用户已有的未提交修改；不要覆盖或回滚无关差异。
+- 开始前在外层仓库运行 `git status --short`，并分别使用 `git -C app status --short`、`git -C plugin-registry status --short`、`git -C plugins/accessibility-grant status --short`、`git -C plugins/phigros-advisor status --short`、`git -C plugins/gacha-analysis status --short` 检查子仓库，保留用户已有的未提交修改；不要覆盖或回滚无关差异。
 - `.gradle/`、`.kotlin/`、各级 `build/`、临时截图等通常可重新生成；清理前仍应确认路径归属。保留源码、文档、`local.properties` 之外的项目配置，以及用户要求保留的正式产物。
 - `local.properties`、IDE 配置、缓存和构建目录不得提交。
 - 用户要求整理并提交时，把“删除可再生产物”和“功能修改”分开处理；按仓库和关注点拆成多个小提交，不要生成跨多个仓库的单体提交。

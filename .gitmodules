@@ -10,3 +10,6 @@
 [submodule "plugins/gacha-analysis"]
 	path = plugins/gacha-analysis
 	url = https://github.com/android-tool-suite/plugin-gacha-analysis.git
+[submodule "plugin-registry"]
+	path = plugin-registry
+	url = https://github.com/android-tool-suite/plugin-registry.git

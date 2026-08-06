@@ -90,7 +90,7 @@ function Get-PublishState([string]$Repository, [string]$Commit) {
 }
 
 function Read-Version([string]$BuildFile) {
-    if (-not (Test-Path -LiteralPath $BuildFile)) {
+    if ([string]::IsNullOrWhiteSpace($BuildFile) -or -not (Test-Path -LiteralPath $BuildFile)) {
         return '-'
     }
     $content = Get-Content -LiteralPath $BuildFile -Raw
@@ -109,6 +109,12 @@ $components = @(
         RelativePath = 'app'
         Path = (Join-Path $workspaceRoot 'app')
         Build = (Join-Path $workspaceRoot 'app\app\build.gradle')
+    },
+    [pscustomobject]@{
+        Name = 'plugin-registry'
+        RelativePath = 'plugin-registry'
+        Path = (Join-Path $workspaceRoot 'plugin-registry')
+        Build = $null
     },
     [pscustomobject]@{
         Name = 'accessibility-grant'
@@ -171,7 +177,7 @@ $rows = foreach ($component in $components) {
         'rev-parse',
         ":$($component.RelativePath)"
     )
-    $gitlinkStaged = [bool]($locked -and $indexed -and $locked -ne $indexed)
+    $gitlinkStaged = [bool]($indexed -and $locked -ne $indexed)
     $publishState = Get-PublishState $component.Path $head
 
     $baselineState = if ($componentDirty) {

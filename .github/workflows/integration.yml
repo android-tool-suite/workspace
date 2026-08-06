@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - app
+      - plugin-registry
       - plugins/accessibility-grant
       - plugins/phigros-advisor
       - plugins/gacha-analysis
@@ -17,6 +18,7 @@ on:
       - main
     paths:
       - app
+      - plugin-registry
       - plugins/accessibility-grant
       - plugins/phigros-advisor
       - plugins/gacha-analysis

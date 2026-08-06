@@ -2,7 +2,8 @@
 param(
     [switch]$NoClean,
     [switch]$SkipTests,
-    [string]$GradleExecutable = 'gradle'
+    [string]$GradleExecutable = 'gradle',
+    [string]$PythonExecutable = 'python'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,6 +11,7 @@ Set-StrictMode -Version Latest
 
 $workspaceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $appRoot = Join-Path $workspaceRoot 'app'
+$registryRoot = Join-Path $workspaceRoot 'plugin-registry'
 $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
 $gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
@@ -20,6 +22,8 @@ $outputDirectory = Join-Path $workspaceRoot 'artifacts'
 function Assert-WorkspaceLayout {
     $required = @(
         (Join-Path $appRoot 'settings.gradle'),
+        (Join-Path $registryRoot 'sources.json'),
+        (Join-Path $registryRoot 'tests\test_build_registry.py'),
         (Join-Path $accessibilityRoot 'settings.gradle'),
         (Join-Path $phigrosRoot 'settings.gradle'),
         (Join-Path $gachaRoot 'settings.gradle')
@@ -80,8 +84,20 @@ $gradle = Get-Command $GradleExecutable -ErrorAction SilentlyContinue
 if ($null -eq $gradle) {
     throw "找不到 Gradle：$GradleExecutable。请安装 Gradle 8.9+ 并加入 PATH。"
 }
+$python = if ($SkipTests) { $null } else { Get-Command $PythonExecutable -ErrorAction SilentlyContinue }
+if (-not $SkipTests -and $null -eq $python) {
+    throw "找不到 Python：$PythonExecutable。插件索引测试需要 Python 3。"
+}
 
 $buildTasks = if ($NoClean) { @('collectArtifacts') } else { @('clean', 'collectArtifacts') }
+
+if (-not $SkipTests) {
+    Invoke-Native $python.Source @(
+        '-m', 'unittest', 'discover',
+        '-s', (Join-Path $registryRoot 'tests'),
+        '-v'
+    )
+}
 
 Invoke-Native $gradle.Source (@('-p', $appRoot) + $buildTasks)
 Invoke-Native $gradle.Source @(
@@ -154,10 +170,12 @@ $manifest = [ordered]@{
         accessibilityGrant = Get-NativeOutput 'git' @('-c', "safe.directory=$accessibilityRoot", '-C', $accessibilityRoot, 'rev-parse', 'HEAD')
         phigrosAdvisor = Get-NativeOutput 'git' @('-c', "safe.directory=$phigrosRoot", '-C', $phigrosRoot, 'rev-parse', 'HEAD')
         gachaAnalysis = Get-NativeOutput 'git' @('-c', "safe.directory=$gachaRoot", '-C', $gachaRoot, 'rev-parse', 'HEAD')
+        pluginRegistry = Get-NativeOutput 'git' @('-c', "safe.directory=$registryRoot", '-C', $registryRoot, 'rev-parse', 'HEAD')
     }
     tests = [ordered]@{
         phigrosDebugUnitTest = -not $SkipTests
         gachaDebugUnitTest = -not $SkipTests
+        registryGeneratorUnitTest = -not $SkipTests
     }
     artifacts = @($manifestArtifacts)
 }
