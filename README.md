@@ -130,6 +130,6 @@ Release 应用默认使用正式插件仓库，但可在仓库页主动切换到
 .\tools\install-latest.ps1 -Serial <设备序列号> -Plugins gacha-analysis
 ```
 
-安装脚本默认先安装主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
+安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；插件管理页可使用 `.atsbackup` 手动迁移宿主布局与插件。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。

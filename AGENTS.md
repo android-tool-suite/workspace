@@ -149,7 +149,7 @@ gradle -p plugins\gacha-analysis `
 多设备场景必须显式指定 serial。文档中的 PowerShell 日志示例应先获取 PID，再传给 logcat，避免不可移植的内联替换：
 
 ```powershell
-$appPid = adb shell pidof com.androidtoolsuite.app
+$appPid = adb shell pidof com.androidtoolsuite.app.debug
 adb logcat "--pid=$appPid"
 ```
 
