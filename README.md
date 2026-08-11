@@ -6,7 +6,7 @@
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
 - `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
-- `plugin-registry`：正式/调试插件索引、签名和 GitHub Pages 展示页。
+- `plugin-registry`：应用与插件的正式/调试索引、历史目录、签名和 GitHub Pages 发布中心。
 
 五个子模块是彼此独立的权威源码仓库，分别维护提交和发布边界。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
 
@@ -109,9 +109,9 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和三个插件都支持两个发布通道：`main` 分支 CI 成功后更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
+主体和三个插件都支持两个发布通道：`main` 分支 CI 成功后创建 `debug-<完整提交 SHA>` 历史快照并更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
 
-运行时插件目录由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区的第五个子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 GitHub Pages 分别发布 ECDSA 签名的正式、调试索引。组件发布完成后发送事件触发索引重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
+运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区的第五个子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
 
 Release 应用默认使用正式插件仓库，但可在仓库页主动切换到调试仓库；Debug 应用默认使用调试仓库。未推送远程的 `.atsplugin` 仍可从同一页面本地导入，并明确显示为未经仓库验证。
 
