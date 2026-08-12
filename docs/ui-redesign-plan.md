@@ -151,7 +151,7 @@
 ```
 外观
   主题                    跟随系统 ▾
-  配色                    品牌配色 ▾
+  配色                    默认配色 ▾
 
 更新
   自动检查更新                 [ ● ]
@@ -171,7 +171,7 @@
 ```
 
 - **主题**：跟随系统／浅色／深色。
-- **配色**：品牌配色／跟随壁纸。默认品牌配色。当前代码 `dynamicColor = true` 让
+- **配色**：默认配色／跟随壁纸。默认为应用自带配色。当前代码 `dynamicColor = true` 让
   Android 12+ 上品牌 teal 永远不出现，配色由壁纸决定，而启动图标仍是写死的 `#0F766E`，
   两者对不上。默认改为品牌色，动态取色降为可选。
 - **自动检查更新**开关持久化到 `uiPreferences`，新增 key `auto_check_updates`，默认开。
@@ -409,10 +409,16 @@ val SuiteSemantic.warning / onWarning / warningContainer
 val SuiteSemantic.danger  / onDanger  / dangerContainer
 val SuiteSemantic.info    / onInfo    / infoContainer
 
-// 游戏语义色收进 SDK，两个插件不再各自硬编码
-object SuiteGameColors { rarity5 / rarity4 / rarity3 / levelEz / levelHd /
-                         levelIn / levelAt / gain / loss }
+// 宿主可以钉死主题，插件不能读 isSystemInDarkTheme()，
+// 所以由 SDK 暴露已解析的深浅状态，供插件给自己的调色板选档
+val SuiteTheming.isDark
 ```
+
+**游戏配色不进 SDK。** 稀有度、难度、评级配色属于单个插件的领域知识，SDK 作为宿主与插件之间的
+公开契约不应该认识「5 星是金色」「IN 是紫色」这类规则。这些调色板留在各插件内部
+（`GachaRarityPalette`、`PhigrosPalette`），各自维护浅深两档。跨插件共享的只有
+`SuiteSemantic` 那四组语义色：UP/歪、RKS 涨跌、运气档位这类「好/一般/差」判断走语义色，
+和宿主的成功/警告/危险保持一致。
 
 新增组件：
 
