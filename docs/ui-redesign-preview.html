@@ -3,1474 +3,774 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Android Tool Suite 界面重设计预览</title>
+<title>Android Tool Suite UI 设计模式规范预览</title>
 <style>
-:root{
-  --primary:#006B5F; --on-primary:#FFFFFF;
-  --primary-container:#9EF2E2; --on-primary-container:#00201B;
-  --secondary-container:#CDE8E1; --on-secondary-container:#0B1F1B;
-  --bg:#F7FAF8; --surface:#F7FAF8;
-  --surf-low:#F1F5F2; --surf:#ECF1EE; --surf-high:#E6EBE8;
-  --on-surface:#191C1B; --on-surf-var:#3F4946;
-  --outline:#6F7976; --outline-var:#BFC9C5;
-  --error:#BA1A1A; --on-error:#FFFFFF; --error-container:#FFDAD6;
-  --success:#1B6B45; --warning:#8A4F00; --warning-container:#FFDDB3;
-  --page:#E9EDEB; --frame:#2A2F2D;
+:root {
+  color-scheme: light;
+  --primary: #006B5F;
+  --on-primary: #FFFFFF;
+  --primary-container: #C3E4DC;
+  --on-primary-container: #00201B;
+  --secondary: #4A635E;
+  --secondary-container: #D5E7E2;
+  --on-secondary-container: #0B1F1B;
+  --tertiary: #446179;
+  --background: #F7FAF8;
+  --surface: #F7FAF8;
+  --surface-low: #F0F5F2;
+  --surface-container: #EAF0ED;
+  --surface-high: #E3EAE6;
+  --surface-highest: #DCE5E1;
+  --surface-variant: #DAE5E1;
+  --on-surface: #191C1B;
+  --on-surface-variant: #3F4946;
+  --outline: #6F7976;
+  --outline-variant: #BFC9C5;
+  --error: #BA1A1A;
+  --on-error: #FFFFFF;
+  --danger-container: #FFDAD6;
+  --on-danger-container: #410002;
+  --success: #176B45;
+  --on-success: #FFFFFF;
+  --success-container: #B8ECCE;
+  --on-success-container: #002512;
+  --warning: #7A4B00;
+  --on-warning: #FFFFFF;
+  --warning-container: #FFDDB3;
+  --on-warning-container: #281800;
+  --info: #245D91;
+  --info-container: #D2E4FF;
+  --on-info-container: #001C37;
+  --canvas: #E6ECE9;
+  --frame: #202725;
+  --shadow: rgba(16, 36, 31, .15);
 }
-.dark{
-  --primary:#82D5C6; --on-primary:#00372F;
-  --primary-container:#005047; --on-primary-container:#9EF2E2;
-  --secondary-container:#334B47; --on-secondary-container:#CDE8E1;
-  --bg:#0E1513; --surface:#0E1513;
-  --surf-low:#151C1A; --surf:#1A2220; --surf-high:#252D2A;
-  --on-surface:#DEE4E1; --on-surf-var:#BFC9C5;
-  --outline:#89938F; --outline-var:#3F4946;
-  --error:#FFB4AB; --on-error:#690005; --error-container:#93000A;
-  --success:#6FD9A6; --warning:#FFB868; --warning-container:#5C3A00;
-  --page:#07100E; --frame:#000;
+
+body.dark {
+  color-scheme: dark;
+  --primary: #82D5C6;
+  --on-primary: #00372F;
+  --primary-container: #005047;
+  --on-primary-container: #9EF2E2;
+  --secondary: #B1CCC5;
+  --secondary-container: #334B47;
+  --on-secondary-container: #D5E7E2;
+  --tertiary: #ACCBE5;
+  --background: #0E1513;
+  --surface: #0E1513;
+  --surface-low: #151C1A;
+  --surface-container: #1A2220;
+  --surface-high: #252D2A;
+  --surface-highest: #303936;
+  --surface-variant: #3F4946;
+  --on-surface: #DEE4E1;
+  --on-surface-variant: #BFC9C5;
+  --outline: #89938F;
+  --outline-variant: #3F4946;
+  --error: #FFB4AB;
+  --on-error: #690005;
+  --danger-container: #93000A;
+  --on-danger-container: #FFDAD6;
+  --success: #88D5A6;
+  --on-success: #00391F;
+  --success-container: #00522F;
+  --on-success-container: #A4F2C3;
+  --warning: #F3BD6F;
+  --on-warning: #432C00;
+  --warning-container: #5D4200;
+  --on-warning-container: #FFDDB3;
+  --info: #A3C9FF;
+  --info-container: #074875;
+  --on-info-container: #D2E4FF;
+  --canvas: #08100E;
+  --frame: #000000;
+  --shadow: rgba(0, 0, 0, .42);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",Roboto,sans-serif;
-  background:var(--page); color:var(--on-surface);
-  padding:32px 20px 80px; transition:background .2s;
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--on-surface);
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  transition: background .18s ease, color .18s ease;
 }
-/* ---------- 页面外框 ---------- */
-.pagehead{max-width:1240px;margin:0 auto 28px;display:flex;
-  align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
-.pagehead h1{font-size:26px;font-weight:700;letter-spacing:-.3px}
-.pagehead p{font-size:13px;color:var(--on-surf-var);margin-top:6px;max-width:640px;line-height:1.6}
-.toggle{display:flex;gap:8px;align-items:center}
-.toggle button{
-  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
-  border:1px solid var(--outline-var);background:var(--surf-low);
-  color:var(--on-surface);padding:9px 16px;border-radius:99px;transition:.15s
+button { font: inherit; }
+code {
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: var(--surface-high);
+  color: var(--primary);
+  overflow-wrap: anywhere;
 }
-.toggle button.on{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
-.grid{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:28px}
-.cell{width:300px}
-.cell > h3{font-size:14px;font-weight:700;margin-bottom:4px;display:flex;
-  align-items:center;gap:7px}
-.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;
-  background:var(--primary-container);color:var(--on-primary-container)}
-.tag.new{background:var(--success);color:#fff}
-.cell > p.note{font-size:11.5px;color:var(--on-surf-var);line-height:1.55;margin-bottom:10px}
-/* ---------- 手机框 ---------- */
-.phone{
-  width:300px;height:614px;background:var(--frame);border-radius:34px;
-  padding:9px;box-shadow:0 8px 28px rgba(0,0,0,.28);position:relative
+
+.page-header {
+  padding: 56px max(24px, calc((100vw - 1280px) / 2)) 42px;
+  background: var(--background);
+  border-bottom: 1px solid var(--outline-variant);
 }
-.screen{
-  width:100%;height:100%;background:var(--bg);border-radius:26px;
-  overflow:hidden;display:flex;flex-direction:column;position:relative
+.header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
 }
-.statusbar{height:26px;flex:0 0 26px;display:flex;align-items:center;
-  justify-content:space-between;padding:0 16px;font-size:10px;
-  font-weight:600;color:var(--on-surface);opacity:.75}
-.body{flex:1;overflow:hidden;position:relative}
-.scroll{height:100%;overflow:hidden;padding:0 16px 12px}
-/* ---------- 顶栏 ---------- */
-.topbar{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 14px;
-  flex:0 0 auto;min-height:46px}
-.topbar .ttl{font-size:17px;font-weight:700;flex:1;letter-spacing:-.2px}
-.topbar .ttl.small{font-size:15px}
-.iconbtn{width:34px;height:34px;border-radius:99px;display:flex;
-  align-items:center;justify-content:center;flex:0 0 auto;
-  color:var(--on-surf-var);font-size:16px}
-.iconbtn.ghost:hover{background:var(--surf)}
-/* ---------- 大标题 ---------- */
-.h1{font-size:27px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
-.sub{font-size:12px;color:var(--on-surf-var);line-height:1.5;margin-top:4px}
-.eyebrow{font-size:10.5px;font-weight:700;color:var(--primary);
-  letter-spacing:.4px;margin-bottom:2px}
-.sechead{display:flex;align-items:flex-end;justify-content:space-between;
-  gap:8px;margin:16px 0 8px}
-.sechead .st{font-size:14.5px;font-weight:700}
-.sechead .ss{font-size:11px;color:var(--on-surf-var);margin-top:2px}
-.sechead .act{font-size:11.5px;font-weight:600;color:var(--primary);flex:0 0 auto}
-/* ---------- 卡片 ---------- */
-.card{background:var(--surf-low);border-radius:20px;padding:14px 15px;
-  margin-bottom:10px}
-.card.hi{background:var(--primary-container);color:var(--on-primary-container)}
-.card.flat{background:var(--surf);border-radius:16px}
-.card .ct{font-size:14.5px;font-weight:700;letter-spacing:-.1px}
-.card .cd{font-size:11.5px;color:var(--on-surf-var);line-height:1.5;margin-top:3px}
-.card.hi .cd{color:var(--on-primary-container);opacity:.82}
-.row{display:flex;align-items:center;gap:10px}
-.row.top{align-items:flex-start}
-.grow{flex:1;min-width:0}
-.divider{height:1px;background:var(--outline-var);opacity:.55;margin:11px 0}
-.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* ---------- 图标底座 ---------- */
-.ibox{width:38px;height:38px;border-radius:12px;background:var(--secondary-container);
-  color:var(--on-secondary-container);display:flex;align-items:center;
-  justify-content:center;font-size:17px;flex:0 0 auto}
-.ibox.sm{width:30px;height:30px;border-radius:10px;font-size:14px}
-/* ---------- 按钮 ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  height:36px;padding:0 17px;border-radius:99px;font-size:12.5px;
-  font-weight:600;background:var(--primary);color:var(--on-primary);
-  flex:0 0 auto;white-space:nowrap}
-.btn.out{background:transparent;color:var(--primary);
-  border:1px solid var(--outline-var)}
-.btn.text{background:transparent;color:var(--primary);padding:0 10px}
-.btn.tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
-.btn.dgr{background:transparent;color:var(--error);border:1px solid var(--error);opacity:.9}
-.btn.sm{height:31px;padding:0 13px;font-size:11.5px}
-.btn.wide{width:100%}
-.btn.dim{opacity:.38}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-/* ---------- 开关 ---------- */
-.sw{width:44px;height:26px;border-radius:99px;background:var(--outline);
-  position:relative;flex:0 0 auto;opacity:.55}
-.sw::after{content:"";position:absolute;top:5px;left:5px;width:16px;height:16px;
-  border-radius:99px;background:var(--surface)}
-.sw.on{background:var(--primary);opacity:1}
-.sw.on::after{left:23px;width:20px;height:20px;top:3px;background:var(--on-primary)}
-.sw.off{background:var(--surf-high);opacity:1;border:2px solid var(--outline)}
-.sw.off::after{background:var(--outline);top:3px;left:3px}
-.sw.dis{opacity:.3}
-/* ---------- chip / badge ---------- */
-.chip{display:inline-flex;align-items:center;gap:5px;height:29px;padding:0 12px;
-  border-radius:9px;font-size:11.5px;font-weight:600;
-  border:1px solid var(--outline-var);color:var(--on-surf-var)}
-.chip.on{background:var(--secondary-container);color:var(--on-secondary-container);
-  border-color:transparent}
-.chip.plain{border:none;background:var(--surf);padding:0 10px;height:25px;font-size:11px}
-.badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;
-  border-radius:99px;font-size:10px;font-weight:700}
-.badge.ok{background:var(--primary-container);color:var(--on-primary-container)}
-.badge.mut{background:var(--surf-high);color:var(--on-surf-var)}
-.badge.warn{background:var(--warning-container);color:var(--warning)}
-.ver{font-size:11px;font-weight:600;color:var(--on-surf-var)}
-/* ---------- 设置行 ---------- */
-.sgroup{margin-bottom:6px}
-.slabel{font-size:11.5px;font-weight:700;color:var(--primary);
-  padding:14px 4px 7px;letter-spacing:.2px}
-.srow{display:flex;align-items:center;gap:12px;padding:11px 4px;min-height:48px}
-.srow .sk{font-size:13.5px;font-weight:500}
-.srow .sv{font-size:11.5px;color:var(--on-surf-var);margin-top:2px;line-height:1.45}
-.srow .strail{font-size:12px;color:var(--on-surf-var);font-weight:600;flex:0 0 auto}
-.shint{font-size:11px;color:var(--on-surf-var);padding:0 4px 10px;line-height:1.5;opacity:.9}
-/* ---------- 底栏 ---------- */
-.navbar{flex:0 0 58px;height:58px;background:var(--surf);display:flex;
-  align-items:center;padding-bottom:4px}
-.navitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-size:10px;color:var(--on-surf-var);font-weight:600;position:relative}
-.navitem .ni{width:52px;height:29px;border-radius:99px;display:flex;
-  align-items:center;justify-content:center;font-size:16px}
-.navitem.on{color:var(--on-secondary-container)}
-.navitem.on .ni{background:var(--secondary-container)}
-.dot{position:absolute;top:1px;right:16px;width:7px;height:7px;border-radius:99px;
-  background:var(--error);border:1.5px solid var(--surf)}
-.dotn{position:absolute;top:-1px;right:10px;height:15px;min-width:15px;padding:0 4px;
-  border-radius:99px;background:var(--error);color:var(--on-error);font-size:9px;
-  font-weight:700;display:flex;align-items:center;justify-content:center;
-  border:1.5px solid var(--surf)}
-/* ---------- 小部件网格 ---------- */
-.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.w{background:var(--surf-low);border-radius:16px;padding:10px;
-  display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:74px}
-.w.c2{grid-column:span 2}
-.w.c4{grid-column:span 4}
-.w .wl{font-size:9.5px;font-weight:700;color:var(--primary);letter-spacing:.2px}
-.w .wv{font-size:18px;font-weight:700;letter-spacing:-.4px}
-.w .wm{font-size:9.5px;color:var(--on-surf-var);line-height:1.35}
-/* ---------- 对话框 ---------- */
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;
-  align-items:center;justify-content:center;padding:18px;z-index:5}
-.dlg{background:var(--surf);border-radius:26px;padding:22px 20px 14px;width:100%}
-.dlg .dt{font-size:17px;font-weight:700;margin-bottom:12px}
-.dlg .dacts{display:flex;justify-content:flex-end;gap:2px;margin-top:14px;flex-wrap:wrap}
-.upd{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12px}
-.upd .un{flex:1;font-weight:600}
-.upd .uv{font-size:10.5px;color:var(--on-surf-var);font-weight:600}
-/* ---------- Snackbar ---------- */
-.snack{position:absolute;left:12px;right:12px;bottom:70px;background:var(--surf-high);
-  border-radius:13px;padding:13px 15px;font-size:12px;display:flex;
-  align-items:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:4}
-.snack .sa{font-size:12px;font-weight:700;color:var(--primary);flex:0 0 auto}
-/* ---------- 进度 ---------- */
-.prog{height:4px;border-radius:99px;background:var(--surf-high);overflow:hidden}
-.prog i{display:block;height:100%;background:var(--primary);border-radius:99px}
-/* ---------- 空态 ---------- */
-.empty{background:var(--surf-low);border-radius:20px;padding:22px 18px;text-align:left}
-.empty .et{font-size:13.5px;font-weight:700}
-.empty .eb{font-size:11.5px;color:var(--on-surf-var);line-height:1.55;margin-top:5px}
-/* ---------- 说明条 ---------- */
-.notice{background:var(--secondary-container);color:var(--on-secondary-container);
-  border-radius:14px;padding:12px 14px;font-size:11.5px;line-height:1.55;
-  display:flex;gap:9px;align-items:flex-start}
-.notice.warn{background:var(--warning-container);color:var(--warning)}
-/* ---------- before / after 对照 ---------- */
-.cmp{max-width:1240px;margin:44px auto 0;background:var(--surf-low);
-  border-radius:20px;padding:22px 24px}
-.cmp h2{font-size:18px;font-weight:700;margin-bottom:4px}
-.cmp .cs{font-size:12.5px;color:var(--on-surf-var);margin-bottom:16px}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{text-align:left;padding:9px 10px;vertical-align:top;
-  border-bottom:1px solid var(--outline-var)}
-th{font-size:11px;font-weight:700;color:var(--primary);
-  text-transform:uppercase;letter-spacing:.5px}
-td.was{color:var(--on-surf-var);width:38%}
-td.now{width:38%}
-td.why{color:var(--on-surf-var);font-size:11.5px}
-del{color:var(--error);text-decoration-thickness:1px;opacity:.85}
-ins{color:var(--success);text-decoration:none;font-weight:600}
-.sectitle{max-width:1240px;margin:46px auto 18px;
-  border-top:1px solid var(--outline-var);padding-top:22px}
-.sectitle h2{font-size:19px;font-weight:700}
-.sectitle p{font-size:12.5px;color:var(--on-surf-var);margin-top:5px;max-width:720px;line-height:1.6}
+.eyebrow {
+  margin-bottom: 9px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+h1, h2, h3, p { margin-top: 0; }
+h1 { margin-bottom: 12px; font-size: clamp(30px, 5vw, 48px); line-height: 1.08; letter-spacing: -.04em; }
+.lede { max-width: 780px; margin: 0; color: var(--on-surface-variant); font-size: 15px; line-height: 1.75; }
+.segmented {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  background: var(--surface-low);
+}
+.segmented button {
+  min-width: 76px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+.segmented button.active { background: var(--primary); color: var(--on-primary); font-weight: 700; }
+.status-line { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 12px;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-size: 12px;
+  font-weight: 700;
+}
+.pill.good { background: var(--success-container); color: var(--on-success-container); }
+
+.jumpbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  padding: 12px max(24px, calc((100vw - 1280px) / 2));
+  overflow-x: auto;
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  border-bottom: 1px solid var(--outline-variant);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+.jumpbar::-webkit-scrollbar { display: none; }
+.jumpbar a {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.jumpbar a:hover { background: var(--surface-high); color: var(--primary); }
+
+main { max-width: 1280px; margin: 0 auto; padding: 0 24px 88px; }
+.section { padding-top: 58px; scroll-margin-top: 62px; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+.section-head h2 { margin-bottom: 5px; font-size: 26px; letter-spacing: -.025em; }
+.section-head p { max-width: 760px; margin-bottom: 0; color: var(--on-surface-variant); line-height: 1.7; font-size: 14px; }
+.section-no { color: var(--primary); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+
+.principles, .token-grid, .component-grid, .state-grid, .guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+.panel {
+  min-width: 0;
+  border-radius: 24px;
+  background: var(--background);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+.principle { grid-column: span 3; min-height: 172px; padding: 22px; }
+.principle .num { color: var(--primary); font-size: 12px; font-weight: 800; }
+.principle h3 { margin: 24px 0 8px; font-size: 17px; }
+.principle p { margin-bottom: 0; color: var(--on-surface-variant); font-size: 13px; line-height: 1.65; }
+
+.token-card { grid-column: span 4; padding: 22px; }
+.type-token-card { grid-column: span 8; }
+.token-card h3 { margin-bottom: 16px; font-size: 17px; }
+.swatches { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.swatch {
+  min-height: 74px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.swatch strong { font-size: 12px; }
+.primary { background: var(--primary); color: var(--on-primary); }
+.primary-container { background: var(--primary-container); color: var(--on-primary-container); }
+.secondary-container { background: var(--secondary-container); color: var(--on-secondary-container); }
+.surface-low { background: var(--surface-low); color: var(--on-surface); }
+.success-container { background: var(--success-container); color: var(--on-success-container); }
+.warning-container { background: var(--warning-container); color: var(--on-warning-container); }
+.danger-container { background: var(--danger-container); color: var(--on-danger-container); }
+.info-container { background: var(--info-container); color: var(--on-info-container); }
+.scale-list { display: grid; gap: 10px; }
+.scale-row { display: grid; grid-template-columns: 52px 46px 1fr; align-items: center; gap: 8px; font-size: 12px; }
+.scale-row code { background: transparent; padding: 0; }
+.scale-bar { height: 10px; border-radius: 999px; background: var(--primary); opacity: .8; }
+.shape-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.shape {
+  height: 92px;
+  padding: 13px;
+  background: var(--surface-low);
+  border: 1px solid var(--outline-variant);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: var(--on-surface-variant);
+  font-size: 11px;
+}
+.shape strong { color: var(--on-surface); }
+.r-card { border-radius: 24px; }
+.r-inner { border-radius: 16px; }
+.r-chip { border-radius: 12px; }
+.r-dialog { border-radius: 28px; }
+
+.layout-board { display: grid; grid-template-columns: 1fr 1.25fr; gap: 18px; }
+.layout-panel { padding: 22px; }
+.layout-panel h3 { font-size: 17px; margin-bottom: 8px; }
+.layout-panel > p { color: var(--on-surface-variant); font-size: 13px; line-height: 1.6; }
+.wire-mobile, .wire-wide { height: 250px; margin-top: 18px; border: 1px solid var(--outline-variant); border-radius: 22px; overflow: hidden; background: var(--surface-low); }
+.wire-mobile { max-width: 170px; margin-left: auto; margin-right: auto; display: flex; flex-direction: column; }
+.wire-wide { display: grid; grid-template-columns: 76px 1fr; }
+.wire-content { flex: 1; display: grid; place-items: center; padding: 18px; }
+.wire-sheet { width: 100%; max-width: 210px; height: 100%; border-radius: 16px; background: var(--background); border: 1px dashed var(--outline); display: grid; place-items: center; color: var(--on-surface-variant); font-size: 12px; }
+.wire-nav { min-height: 48px; background: var(--surface-container); display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px; }
+.wire-nav i { display: block; border-radius: 999px; background: var(--outline-variant); }
+.wire-rail { padding: 14px 12px; background: var(--surface-container); display: grid; align-content: start; gap: 12px; }
+.wire-rail i { height: 34px; border-radius: 999px; background: var(--outline-variant); }
+.rule-list { display: grid; gap: 11px; margin-top: 18px; }
+.rule { display: flex; gap: 10px; color: var(--on-surface-variant); font-size: 12px; line-height: 1.55; }
+.rule b { color: var(--primary); }
+
+.phone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(292px, 1fr)); gap: 26px; align-items: start; }
+.phone-case { width: 324px; max-width: 100%; margin: 0 auto; }
+.phone-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.phone-label h3 { margin: 0; font-size: 15px; }
+.phone-label span { color: var(--on-surface-variant); font-size: 11px; }
+.phone {
+  width: 100%;
+  height: 676px;
+  padding: 9px;
+  border-radius: 38px;
+  background: var(--frame);
+  box-shadow: 0 16px 38px rgba(0,0,0,.24);
+}
+.app {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 30px;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.statusbar { height: 28px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; color: var(--on-surface); font-size: 10px; font-weight: 700; opacity: .78; }
+.phone-content { flex: 1; min-height: 0; overflow: hidden; padding: 18px 18px 12px; }
+.phone-content.flush { padding-left: 0; padding-right: 0; }
+.phone-scroll { height: 100%; overflow: hidden; }
+.screen-eyebrow { color: var(--primary); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.screen-title { margin: 2px 0 5px; font-size: 27px; line-height: 1.1; letter-spacing: -.04em; }
+.screen-copy { margin: 0; color: var(--on-surface-variant); font-size: 11.5px; line-height: 1.55; }
+.app-card { margin-top: 11px; padding: 16px 17px; border-radius: 24px; background: var(--surface-low); }
+.app-card.hero { background: var(--primary-container); color: var(--on-primary-container); }
+.app-card.outlined { outline: 2px solid var(--primary); outline-offset: -2px; }
+.app-card.dim { opacity: .62; }
+.row { display: flex; align-items: center; gap: 10px; }
+.row.top { align-items: flex-start; }
+.grow { flex: 1; min-width: 0; }
+.ct { font-size: 13.5px; font-weight: 750; line-height: 1.35; }
+.cd { margin-top: 3px; color: var(--on-surface-variant); font-size: 10.5px; line-height: 1.45; }
+.hero .cd { color: var(--on-primary-container); opacity: .78; }
+.meta { color: var(--on-surface-variant); font-size: 10px; font-weight: 650; }
+.section-title { display: flex; align-items: flex-end; gap: 8px; margin: 16px 0 8px; }
+.section-title > div:first-child { flex: 1; }
+.section-title strong { display: block; font-size: 13px; }
+.section-title small { display: block; margin-top: 2px; color: var(--on-surface-variant); font-size: 10px; }
+.section-action { color: var(--primary); font-size: 10px; font-weight: 750; }
+.icon-box { width: 42px; height: 42px; border-radius: 16px; display: grid; place-items: center; flex: 0 0 auto; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 18px; }
+.icon-box.dense { width: 34px; height: 34px; border-radius: 12px; font-size: 15px; }
+.widget-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.widget { min-height: 82px; padding: 11px; border-radius: 16px; background: var(--surface-low); display: flex; flex-direction: column; justify-content: center; }
+.widget.c2 { grid-column: span 2; }
+.widget.c4 { grid-column: span 4; }
+.widget .label { color: var(--primary); font-size: 9px; font-weight: 800; }
+.widget .value { margin: 3px 0; font-size: 17px; font-weight: 800; }
+.widget .hint { color: var(--on-surface-variant); font-size: 9px; line-height: 1.35; }
+.switch { width: 40px; height: 24px; border-radius: 999px; position: relative; flex: 0 0 auto; background: var(--outline); opacity: .7; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); }
+.switch.on { background: var(--primary); opacity: 1; }
+.switch.on::after { left: 20px; width: 20px; height: 20px; top: 2px; background: var(--on-primary); }
+.chev { width: 18px; color: var(--on-surface-variant); text-align: center; font-size: 16px; }
+.divider { height: 1px; margin: 11px -17px 7px; background: var(--outline-variant); }
+.subrow { min-height: 36px; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 650; }
+.button-row { display: flex; gap: 8px; margin-top: 8px; }
+.btn { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: var(--on-primary); font-size: 10.5px; font-weight: 750; }
+.btn.outline { border: 1px solid var(--outline); background: transparent; color: var(--primary); }
+.btn.text { background: transparent; color: var(--primary); }
+.btn.flex { flex: 1; }
+.btn.full { width: 100%; margin-top: 10px; }
+.verified { color: var(--primary); font-size: 13px; }
+.progress { height: 5px; margin-top: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-highest); }
+.progress i { display: block; width: 64%; height: 100%; border-radius: inherit; background: var(--primary); }
+.notice { margin-top: 9px; padding: 10px 11px; border-radius: 16px; background: var(--warning-container); color: var(--on-warning-container); font-size: 10px; line-height: 1.45; }
+.nav { height: 70px; flex: 0 0 70px; padding: 7px 4px 8px; background: var(--surface-container); display: grid; grid-template-columns: repeat(5, 1fr); }
+.nav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--on-surface-variant); font-size: 9px; font-weight: 650; }
+.nav-icon { width: 46px; height: 27px; border-radius: 999px; display: grid; place-items: center; font-size: 14px; }
+.nav-item.active { color: var(--on-secondary-container); }
+.nav-item.active .nav-icon { background: var(--secondary-container); }
+.nav-badge { position: absolute; top: 1px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; display: grid; place-items: center; background: var(--error); color: var(--on-error); font-size: 8px; border: 1px solid var(--surface-container); }
+.settings-group { margin-bottom: 3px; }
+.settings-label { padding: 10px 18px 5px; color: var(--primary); font-size: 10px; font-weight: 800; }
+.settings-row { min-height: 48px; padding: 10px 18px; display: flex; align-items: center; gap: 10px; }
+.settings-row .key { font-size: 12px; }
+.settings-row .support { margin-top: 2px; color: var(--on-surface-variant); font-size: 9.5px; line-height: 1.35; }
+.settings-row .trail { color: var(--on-surface-variant); font-size: 10px; font-weight: 650; }
+.emphasis { color: var(--primary); }
+.topbar { min-height: 50px; padding: 5px 10px; display: flex; align-items: center; gap: 8px; background: var(--background); }
+.topbar .icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--on-surface-variant); }
+.topbar strong { flex: 1; font-size: 15px; }
+.tabs { display: flex; gap: 4px; padding: 0 14px; border-bottom: 1px solid var(--outline-variant); }
+.tab { padding: 9px 11px 8px; color: var(--on-surface-variant); font-size: 10.5px; }
+.tab.active { color: var(--primary); font-weight: 750; border-bottom: 2px solid var(--primary); }
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.metric { text-align: center; }
+.metric small { display: block; color: var(--on-surface-variant); font-size: 8px; }
+.metric b { display: block; margin-top: 2px; font-size: 14px; }
+.success-text { color: var(--success); }
+.danger-text { color: var(--error); }
+
+.component { grid-column: span 4; padding: 22px; min-height: 236px; }
+.component h3 { font-size: 16px; margin-bottom: 5px; }
+.component > p { margin-bottom: 18px; color: var(--on-surface-variant); font-size: 12px; line-height: 1.55; }
+.component-stack { display: grid; gap: 10px; }
+.sample-card { padding: 16px; border-radius: 24px; background: var(--surface-low); }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { min-height: 28px; padding: 0 11px; border-radius: 12px; display: inline-flex; align-items: center; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: 10.5px; font-weight: 650; }
+.chip.selected { border-color: transparent; background: var(--secondary-container); color: var(--on-secondary-container); }
+.state { grid-column: span 3; padding: 20px; min-height: 192px; }
+.state h3 { font-size: 15px; margin-bottom: 14px; }
+.state p { margin: 0; color: var(--on-surface-variant); font-size: 11px; line-height: 1.55; }
+.spinner { width: 24px; height: 24px; border: 3px solid var(--surface-highest); border-top-color: var(--primary); border-radius: 50%; }
+.error-state { padding: 15px; border-radius: 24px; background: var(--danger-container); color: var(--on-danger-container); }
+.error-state p { color: inherit; }
+.snackbar { padding: 13px 15px; border-radius: 13px; background: var(--surface-highest); display: flex; gap: 10px; align-items: center; box-shadow: 0 5px 18px var(--shadow); font-size: 11px; }
+.snackbar b { margin-left: auto; color: var(--primary); }
+.feedback-board { margin-top: 16px; padding: 22px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 22px; align-items: center; }
+.dialog-sample { max-width: 430px; padding: 22px; border-radius: 28px; background: var(--surface-container); box-shadow: 0 12px 28px var(--shadow); }
+.dialog-sample h3 { margin-bottom: 12px; font-size: 18px; }
+.update-line { min-height: 42px; display: flex; align-items: center; gap: 10px; }
+.update-line .transition { color: var(--on-surface-variant); font-size: 11px; font-weight: 650; }
+
+.interaction-table, .copy-table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 24px; background: var(--background); box-shadow: 0 10px 30px var(--shadow); }
+th, td { padding: 14px 16px; border-bottom: 1px solid var(--outline-variant); text-align: left; vertical-align: top; font-size: 12px; line-height: 1.55; }
+th { color: var(--primary); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 750; }
+.baseline-note { margin-top: 18px; padding: 20px; border-radius: 24px; background: var(--primary-container); color: var(--on-primary-container); line-height: 1.65; font-size: 13px; }
+.baseline-note strong { display: block; margin-bottom: 5px; font-size: 15px; }
+
+.guidance { grid-column: span 6; padding: 22px; }
+.guidance h3 { margin-bottom: 14px; font-size: 17px; }
+.do-list { display: grid; gap: 10px; }
+.do-item { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; color: var(--on-surface-variant); font-size: 12px; line-height: 1.55; }
+.mark { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center; font-weight: 900; }
+.mark.do { background: var(--success-container); color: var(--on-success-container); }
+.mark.dont { background: var(--danger-container); color: var(--on-danger-container); }
+.footer { margin-top: 58px; padding: 24px; border-radius: 24px; background: var(--background); color: var(--on-surface-variant); font-size: 12px; line-height: 1.7; text-align: center; }
+
+@media (max-width: 980px) {
+  .principle { grid-column: span 6; }
+  .token-card, .component { grid-column: span 6; }
+  .type-token-card { grid-column: 1 / -1; }
+  .state { grid-column: span 6; }
+}
+@media (max-width: 720px) {
+  .page-header { padding-top: 36px; }
+  .principle, .token-card, .type-token-card, .component, .state, .guidance { grid-column: 1 / -1; }
+  .layout-board { grid-template-columns: 1fr; }
+  .phone-grid { grid-template-columns: minmax(0, 1fr); }
+  .feedback-board { grid-template-columns: 1fr; }
+  .section-head { display: block; }
+  th, td { padding: 11px; }
+  .interaction-table { display: block; overflow-x: auto; }
+}
 </style>
 </head>
 <body>
-<div class="pagehead">
-  <div>
-    <h1>界面与交互重设计预览</h1>
-    <p>底栏扩到 4 项，界面管理合入管理屏（逐项可展开收起），导入／导出／删除合入仓库屏，
-       新增设置与关于。更新检查改为静默自动 + 弹窗提示。主页与工具改为显式编辑模式。
-       配色取自 <code>SuiteDesignSystem.kt</code> 里实际定义的品牌 teal 色板。</p>
-  </div>
-  <div class="toggle">
-    <button id="bl" class="on" onclick="setTheme(0)">浅色</button>
-    <button id="bd" onclick="setTheme(1)">深色</button>
-  </div>
-</div>
-
-<div class="sectitle" style="margin-top:0;border:none;padding-top:0">
-  <h2>五个主要界面</h2>
-  <p>底栏四项加顶栏设置入口。每屏都有真正的顶栏，取代现在把标题写进滚动内容、
-     返回按钮悬浮在左下角的做法。</p>
-</div>
-
-<div class="grid">
-
-  <!-- ============ 1. 主页 ============ -->
-  <div class="cell">
-    <h3>主页 <span class="tag">改动</span></h3>
-    <p class="note">摘要去掉内置／外部区分；拖拽说明压缩为一句；新增顶栏与设置入口。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="ttl">安卓工具合集</div>
-        <div class="iconbtn ghost">⚙</div>
+<header class="page-header">
+  <div class="header-row">
+    <div>
+      <div class="eyebrow">IMPLEMENTED UI BASELINE · SDK 1.2.0</div>
+      <h1>Android Tool Suite<br>UI 设计模式规范</h1>
+      <p class="lede">以当前已交付的宿主与插件界面为准，展示共享 token、五个一级入口、卡片与设置行、
+        长按排序、状态反馈和插件内容模式。这里不再展示未采用的显式编辑模式。</p>
+      <div class="status-line">
+        <span class="pill good">现行行为</span>
+        <span class="pill">宿主 + 插件共用</span>
+        <span class="pill">浅色 / 深色</span>
+        <span class="pill">手机 / 宽屏</span>
       </div>
-      <div class="body"><div class="scroll">
-        <div class="eyebrow">8月11日 星期二</div>
-        <div class="h1">工具台</div>
-        <div class="sub">集中查看运行状态，快速进入常用工具。</div>
-        <div style="height:14px"></div>
-        <div class="card hi">
-          <div class="row">
-            <div style="font-size:24px">▦</div>
-            <div class="grow">
-              <div class="ct">4 个工具已就绪</div>
-              <div class="cd">4 个主页组件</div>
+    </div>
+    <div class="segmented" aria-label="预览主题">
+      <button id="light-theme" class="active" type="button" aria-pressed="true">浅色</button>
+      <button id="dark-theme" type="button" aria-pressed="false">深色</button>
+    </div>
+  </div>
+</header>
+
+<nav class="jumpbar" aria-label="页面目录">
+  <a href="#principles">原则</a>
+  <a href="#tokens">Token</a>
+  <a href="#layout">布局</a>
+  <a href="#host">宿主页</a>
+  <a href="#plugin">插件页</a>
+  <a href="#components">组件</a>
+  <a href="#interaction">交互</a>
+  <a href="#copy">文案</a>
+</nav>
+
+<main>
+  <section class="section" id="principles">
+    <div class="section-head">
+      <div><div class="section-no">01 · PRINCIPLES</div><h2>先统一判断方式，再统一外观</h2></div>
+      <p>页面职责、信息层级和反馈强度优先于装饰。所有插件共享同一套外壳，领域数据仍可保留自己的表达。</p>
+    </div>
+    <div class="principles">
+      <article class="panel principle"><div class="num">01</div><h3>按用户意图分区</h3><p>主页看状态，工具负责进入，管理调行为，仓库管安装与版本，设置承载全局偏好。</p></article>
+      <article class="panel principle"><div class="num">02</div><h3>摘要先于展开</h3><p>收起态也要交代关键状态。低频动作进入展开区、溢出菜单或底部面板。</p></article>
+      <article class="panel principle"><div class="num">03</div><h3>主动操作有反馈</h3><p>Snackbar、局部进度和可重试错误跟着对象出现；后台无结果不制造噪音。</p></article>
+      <article class="panel principle"><div class="num">04</div><h3>用户语言优先</h3><p>说明状态、下一步和后果，不把宿主、versionCode、索引签名等实现术语放进常规界面。</p></article>
+    </div>
+  </section>
+
+  <section class="section" id="tokens">
+    <div class="section-head">
+      <div><div class="section-no">02 · TOKENS</div><h2>颜色、间距与圆角</h2></div>
+      <p>设计稿按这里取值；Compose 代码使用 <code>SuiteSpacing</code>、<code>SuiteShapes</code>、
+        <code>MaterialTheme</code> 与 <code>SuiteSemantic</code>。</p>
+    </div>
+    <div class="token-grid">
+      <article class="panel token-card">
+        <h3>品牌与表面</h3>
+        <div class="swatches">
+          <div class="swatch primary"><strong>Primary</strong><span>#006B5F / #82D5C6</span></div>
+          <div class="swatch primary-container"><strong>Primary container</strong><span>#C3E4DC / #005047</span></div>
+          <div class="swatch secondary-container"><strong>Secondary container</strong><span>#D5E7E2 / #334B47</span></div>
+          <div class="swatch surface-low"><strong>Surface low</strong><span>卡片默认底色</span></div>
+        </div>
+      </article>
+      <article class="panel token-card">
+        <h3>语义容器</h3>
+        <div class="swatches">
+          <div class="swatch success-container"><strong>Success</strong><span>成功、正向结果</span></div>
+          <div class="swatch warning-container"><strong>Warning</strong><span>风险、兼容性提醒</span></div>
+          <div class="swatch danger-container"><strong>Danger</strong><span>错误、破坏性后果</span></div>
+          <div class="swatch info-container"><strong>Info</strong><span>中性信息说明</span></div>
+        </div>
+      </article>
+      <article class="panel token-card">
+        <h3>间距标尺</h3>
+        <div class="scale-list">
+          <div class="scale-row"><code>xs</code><span>4 dp</span><i class="scale-bar" style="width:12%"></i></div>
+          <div class="scale-row"><code>sm</code><span>8 dp</span><i class="scale-bar" style="width:25%"></i></div>
+          <div class="scale-row"><code>md</code><span>12 dp</span><i class="scale-bar" style="width:38%"></i></div>
+          <div class="scale-row"><code>lg</code><span>16 dp</span><i class="scale-bar" style="width:50%"></i></div>
+          <div class="scale-row"><code>xl</code><span>20 dp</span><i class="scale-bar" style="width:63%"></i></div>
+          <div class="scale-row"><code>xxl</code><span>24 dp</span><i class="scale-bar" style="width:75%"></i></div>
+          <div class="scale-row"><code>xxxl</code><span>32 dp</span><i class="scale-bar" style="width:100%"></i></div>
+        </div>
+      </article>
+      <article class="panel token-card">
+        <h3>圆角层级</h3>
+        <div class="shape-list">
+          <div class="shape r-card"><strong>Card · 24</strong><span>主卡片、状态面板</span></div>
+          <div class="shape r-inner"><strong>Inner · 16</strong><span>卡内区域、图标底座</span></div>
+          <div class="shape r-chip"><strong>Chip · 12</strong><span>标签、密集底座</span></div>
+          <div class="shape r-dialog"><strong>Dialog · 28</strong><span>对话框、高层浮层</span></div>
+        </div>
+      </article>
+      <article class="panel token-card type-token-card">
+        <h3>字体层级</h3>
+        <div class="component-stack">
+          <div style="font-size:32px;font-weight:800;letter-spacing:-.04em">工具台 <span class="meta">headlineLarge · 单一页面主标题</span></div>
+          <div style="font-size:22px;font-weight:700">16.4231 <span class="meta">headlineSmall · 核心结果</span></div>
+          <div style="font-size:18px;font-weight:700">主页小部件 <span class="meta">titleLarge · 分段标题</span></div>
+          <div style="font-size:15px;font-weight:700">Phigros Data Studio <span class="meta">titleMedium · 卡片标题</span></div>
+          <div style="font-size:13px;color:var(--on-surface-variant)">本地优先的云存档分析与制图 · bodyMedium</div>
+          <div style="font-size:11px;color:var(--on-surface-variant)">v2.2.1 · 1024 条成绩 · bodySmall</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="layout">
+    <div class="section-head">
+      <div><div class="section-no">03 · LAYOUT</div><h2>一级页面不重复顶栏</h2></div>
+      <p>手机使用五项底栏，宽度达到 840 dp 后切换为侧栏；内容最大 720 dp。插件详情与关于才使用返回顶栏。</p>
+    </div>
+    <div class="layout-board">
+      <article class="panel layout-panel">
+        <h3>手机</h3><p>五个入口固定顺序：主页、工具、管理、仓库、设置。一级内容直接从标题、说明或分段开始。</p>
+        <div class="wire-mobile"><div class="wire-content"><div class="wire-sheet">内容 · 20 dp 水平边距</div></div><div class="wire-nav"><i></i><i></i><i></i><i></i><i></i></div></div>
+      </article>
+      <article class="panel layout-panel">
+        <h3>宽屏</h3><p>侧栏只替换导航位置，不改变页面职责和动作。主内容仍限制在 720 dp 并居中。</p>
+        <div class="wire-wide"><div class="wire-rail"><i></i><i></i><i></i><i></i><i></i></div><div class="wire-content"><div class="wire-sheet">最大宽度 720 dp</div></div></div>
+      </article>
+    </div>
+    <div class="panel layout-panel" style="margin-top:18px">
+      <h3>顶栏使用边界</h3>
+      <div class="rule-list">
+        <div class="rule"><b>✓</b><span>插件详情：返回 + 插件名 + 对象级溢出菜单。</span></div>
+        <div class="rule"><b>✓</b><span>关于：返回 + “关于”。</span></div>
+        <div class="rule"><b>×</b><span>主页／工具／管理／仓库／设置不再重复显示和底栏同名的顶栏。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="host">
+    <div class="section-head">
+      <div><div class="section-no">04 · HOST SCREENS</div><h2>五个一级页面</h2></div>
+      <p>以下是现行信息架构和视觉密度的参考。内容可以随数据变化，页面职责、层级和交互归属保持稳定。</p>
+    </div>
+    <div class="phone-grid">
+      <article class="phone-case">
+        <div class="phone-label"><h3>主页</h3><span>状态摘要 + 小部件</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="phone-content"><div class="phone-scroll">
+            <div class="screen-eyebrow">8月13日 星期四</div><h3 class="screen-title">工具台</h3>
+            <p class="screen-copy">集中查看运行状态，快速进入常用工具。</p>
+            <div class="app-card hero"><div class="row"><div style="font-size:27px">▦</div><div class="grow"><div class="ct">4 个工具已就绪</div><div class="cd">4 个主页组件</div></div></div></div>
+            <div class="section-title"><div><strong>主页小部件</strong><small>长按调整大小或移除 · 长按拖动排序</small></div><span class="section-action">添加 1</span></div>
+            <div class="widget-grid">
+              <div class="widget c2"><span class="label">SHIZUKU</span><span class="value">已连接</span><span class="hint">UID 2000</span></div>
+              <div class="widget c2"><span class="label">无障碍授权</span><span class="value">3 个收藏</span><span class="hint">自动启用 · 开启</span></div>
+              <div class="widget c2"><span class="label">PHIGROS</span><span class="value">16.4231</span><span class="hint">1024 条成绩</span></div>
+              <div class="widget c2"><span class="label">抽卡分析</span><span class="value">72 抽</span><span class="hint">距保底 18 抽</span></div>
             </div>
-          </div>
-        </div>
-        <div class="sechead">
-          <div><div class="st">主页小部件</div>
-            <div class="ss">长按调整大小或隐藏</div></div>
-        </div>
-        <div class="wgrid">
-          <div class="w c2"><div class="wl">SHIZUKU</div>
-            <div class="wv">已连接</div><div class="wm">UID 2000</div></div>
-          <div class="w c2"><div class="wl">无障碍授权</div>
-            <div class="wv">3 个收藏</div><div class="wm">自动启用 · 开启</div></div>
-          <div class="w c2"><div class="wl">PHIGROS</div>
-            <div class="wv">16.42</div><div class="wm">1024 条成绩</div></div>
-          <div class="w c2"><div class="wl">抽卡分析</div>
-            <div class="wv">72 抽</div><div class="wm">距保底 18 抽</div></div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- ============ 2. 工具 ============ -->
-  <div class="cell">
-    <h3>工具 <span class="tag">改动</span></h3>
-    <p class="note">副标题压缩为"拖动可调整顺序"；版本号从可点 chip 改为普通标签，
-       不再暗示一个不存在的独立操作。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="ttl">工具</div>
-        <div class="iconbtn ghost">⚙</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:0 0 12px">拖动可调整顺序</div>
-        <div class="card">
-          <div class="row top">
-            <div class="ibox">🛡</div>
-            <div class="grow">
-              <div class="row"><div class="ct grow">Shizuku 授权</div>
-                <div class="ver">v1.4.0</div></div>
-              <div class="cd">为需要系统能力的插件建立受控连接</div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="row top">
-            <div class="ibox">♿</div>
-            <div class="grow">
-              <div class="row"><div class="ct grow">无障碍授权</div>
-                <div class="ver">v1.3.0</div></div>
-              <div class="cd">通过 Shizuku 管理设备上的无障碍服务</div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="row top">
-            <div class="ibox">🎵</div>
-            <div class="grow">
-              <div class="row"><div class="ct grow">Phigros Data Studio</div>
-                <div class="ver">v2.2.0</div></div>
-              <div class="cd">本地优先的云存档分析与制图</div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="row top">
-            <div class="ibox">🎲</div>
-            <div class="grow">
-              <div class="row"><div class="ct grow">抽卡分析</div>
-                <div class="ver">v1.6.0</div></div>
-              <div class="cd">原神与星穹铁道抽卡记录分析</div>
-            </div>
-          </div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem on"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- ============ 3. 管理（收起） ============ -->
-  <div class="cell">
-    <h3>管理 · 全部收起 <span class="tag new">合并界面管理</span></h3>
-    <p class="note">默认全收起。摘要行「v1.6.0 · 工具页 · 主页」把状态交代完整，
-       不展开也能一屏扫完 7 个插件。启用开关留在收起行上，不为最高频动作多一次点击。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="ttl">管理</div>
-        <div class="iconbtn ghost">⚙</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:0 0 4px">控制插件是否启用，以及在哪里显示。</div>
-        <div class="sechead"><div><div class="st">系统工具</div></div></div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">🛡</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Shizuku 授权</div>
-              <div class="cd" style="margin-top:2px">v1.4.0 · 工具页 · 主页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="sechead"><div><div class="st">已安装插件</div>
-          <div class="ss">6 个</div></div></div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">♿</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">无障碍授权</div>
-              <div class="cd" style="margin-top:2px">v1.3.0 · 仅工具页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">🎵</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Phigros Data Studio</div>
-              <div class="cd" style="margin-top:2px">v2.2.0 · 工具页 · 主页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">🎲</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">抽卡分析</div>
-              <div class="cd" style="margin-top:2px">v1.6.0 · 仅主页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">📋</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">剪贴板历史</div>
-              <div class="cd" style="margin-top:2px">v1.0.0 · 已隐藏</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px;opacity:.62">
-          <div class="row">
-            <div class="ibox sm">🔋</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">电池统计</div>
-              <div class="cd" style="margin-top:2px">v2.0.0 · 已停用</div></div>
-            <div class="sw off"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px;opacity:.62">
-          <div class="row">
-            <div class="ibox sm">📶</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">网络诊断</div>
-              <div class="cd" style="margin-top:2px">v1.1.0 · 已停用</div></div>
-            <div class="sw off"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem on"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- ============ 3b. 管理（展开） ============ -->
-  <div class="cell">
-    <h3>管理 · 展开两项 <span class="tag">展开态</span></h3>
-    <p class="note">允许多项同时展开，不做手风琴。停用时展开区自动折叠并置灰，
-       从属关系用状态表达。没有主页小部件的插件，「在主页显示」整行不渲染。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="ttl">管理</div>
-        <div class="iconbtn ghost">⚙</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:0 0 4px">控制插件是否启用，以及在哪里显示。</div>
-        <div class="sechead"><div><div class="st">系统工具</div></div></div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">🛡</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Shizuku 授权</div>
-              <div class="cd" style="margin-top:2px">v1.4.0 · 工具页 · 主页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="sechead"><div><div class="st">已安装插件</div>
-          <div class="ss">6 个</div></div></div>
-        <div class="card" style="padding:11px 13px;
-          box-shadow:0 0 0 1.5px var(--primary) inset">
-          <div class="row">
-            <div class="ibox sm">♿</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">无障碍授权</div>
-              <div class="cd" style="margin-top:2px">v1.3.0 · 仅工具页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px;color:var(--primary)">⌃</div>
-          </div>
-          <div class="divider"></div>
-          <div class="srow" style="padding:4px 0;min-height:32px">
-            <div class="grow sk" style="font-size:12.5px">在工具页显示</div>
-            <div class="sw on"></div>
-          </div>
-          <div class="srow" style="padding:4px 0;min-height:32px">
-            <div class="grow sk" style="font-size:12.5px">在主页显示</div>
-            <div class="sw off"></div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px">
-          <div class="row">
-            <div class="ibox sm">🎵</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Phigros Data Studio</div>
-              <div class="cd" style="margin-top:2px">v2.2.0 · 工具页 · 主页</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-        <div class="card" style="padding:11px 13px;
-          box-shadow:0 0 0 1.5px var(--primary) inset">
-          <div class="row">
-            <div class="ibox sm">📋</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">剪贴板历史</div>
-              <div class="cd" style="margin-top:2px">v1.0.0 · 已隐藏</div></div>
-            <div class="sw on"></div>
-            <div class="iconbtn" style="width:22px;color:var(--primary)">⌃</div>
-          </div>
-          <div class="divider"></div>
-          <div class="srow" style="padding:4px 0;min-height:32px">
-            <div class="grow sk" style="font-size:12.5px">在工具页显示</div>
-            <div class="sw off"></div>
-          </div>
-          <div class="shint" style="padding:2px 0 0">
-            此插件没有主页小部件</div>
-        </div>
-        <div class="card" style="padding:11px 13px;opacity:.62">
-          <div class="row">
-            <div class="ibox sm">🔋</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">电池统计</div>
-              <div class="cd" style="margin-top:2px">v2.0.0 · 已停用</div></div>
-            <div class="sw off"></div>
-            <div class="iconbtn" style="width:22px">⌄</div>
-          </div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem on"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- ============ 4. 仓库 ============ -->
-  <div class="cell">
-    <h3>仓库 <span class="tag new">合并导入/导出/删除</span></h3>
-    <p class="note">已安装／可安装两段式。渠道切换移入设置的开发者选项。
-       版本选择器收进 ⋮，默认装最新版。三条实现细节说明删除。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="ttl">仓库</div>
-        <div class="iconbtn ghost">⟳</div>
-        <div class="iconbtn ghost">⚙</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sechead" style="margin-top:2px">
-          <div><div class="st">已安装</div><div class="ss">3 个 · 2 项可更新</div></div>
-          <div class="act">全部更新</div>
-        </div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">🎲</div>
-            <div class="grow">
-              <div class="row" style="gap:5px"><div class="ct">抽卡分析</div>
-                <span style="color:var(--primary);font-size:11px">✓</span></div>
-              <div class="cd">1.6.0 → 1.7.0</div>
-            </div>
-            <div class="iconbtn">⋮</div>
-          </div>
-          <div style="height:9px"></div>
-          <div class="btn wide sm">更新到 1.7.0</div>
-        </div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">🎵</div>
-            <div class="grow">
-              <div class="row" style="gap:5px"><div class="ct">Phigros</div>
-                <span style="color:var(--primary);font-size:11px">✓</span></div>
-              <div class="cd">正在下载 2.3.0…</div>
-            </div>
-            <div class="iconbtn">⋮</div>
-          </div>
-          <div style="height:9px"></div>
-          <div class="prog"><i style="width:62%"></i></div>
-        </div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">♿</div>
-            <div class="grow">
-              <div class="row" style="gap:5px"><div class="ct">无障碍授权</div>
-                <span style="color:var(--primary);font-size:11px">✓</span></div>
-              <div class="cd">已是最新 · 1.3.0</div>
-            </div>
-            <div class="iconbtn">⋮</div>
-          </div>
-        </div>
-        <div class="sechead"><div><div class="st">可安装</div>
-          <div class="ss">1 个</div></div></div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">📋</div>
-            <div class="grow">
-              <div class="ct">剪贴板历史</div>
-              <div class="cd">1.0.0</div>
-            </div>
-            <div class="iconbtn">⋮</div>
-          </div>
-          <div style="height:9px"></div>
-          <div class="btn out wide sm">安装</div>
-        </div>
-        <div style="height:4px"></div>
-        <div class="btn text wide">＋ 导入本地插件包</div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem on"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- ============ 5. 设置 ============ -->
-  <div class="cell">
-    <h3>设置 <span class="tag new">新增</span></h3>
-    <p class="note">自动检查更新开关在这里。外观分组让品牌配色重新可控——现在
-       <code>dynamicColor = true</code> 让 Android 12+ 上品牌色永远不出现。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="iconbtn ghost">←</div>
-        <div class="ttl small">设置</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sgroup">
-          <div class="slabel">外观</div>
-          <div class="srow"><div class="grow"><div class="sk">主题</div></div>
-            <div class="strail">跟随系统 ▾</div></div>
-          <div class="srow"><div class="grow"><div class="sk">配色</div>
-            <div class="sv">品牌配色，或跟随系统壁纸取色</div></div>
-            <div class="strail">品牌配色 ▾</div></div>
-        </div>
-        <div class="sgroup">
-          <div class="slabel">更新</div>
-          <div class="srow"><div class="grow"><div class="sk">自动检查更新</div>
-            <div class="sv">启动时静默检查，仅在有更新时提示</div></div>
-            <div class="sw on"></div></div>
-          <div class="srow"><div class="grow">
-            <div class="sk" style="color:var(--primary)">立即检查更新</div></div></div>
-          <div class="srow"><div class="grow"><div class="sk">上次检查</div></div>
-            <div class="strail">今天 14:32</div></div>
-        </div>
-        <div class="sgroup">
-          <div class="slabel">备份与迁移</div>
-          <div class="srow"><div class="grow">
-            <div class="sk" style="color:var(--primary)">导出迁移包</div></div></div>
-          <div class="srow"><div class="grow">
-            <div class="sk" style="color:var(--primary)">导入迁移包</div></div></div>
-          <div class="shint">包含布局与插件包，不含账号与插件数据。</div>
-        </div>
-        <div class="sgroup">
-          <div class="slabel">关于</div>
-          <div class="srow"><div class="ibox sm">▦</div>
-            <div class="grow"><div class="sk">安卓工具合集</div>
-            <div class="sv">1.4.0</div></div>
-            <div class="strail">›</div></div>
-        </div>
-      </div></div>
-    </div></div>
-  </div>
-
-  <!-- ============ 6. 关于 ============ -->
-  <div class="cell">
-    <h3>关于 <span class="tag new">新增</span></h3>
-    <p class="note">版本号在现有界面里完全查不到。<code>versionCode</code>、SDK 版本
-       这类信息放这里是合适的——用户主动进来就是找它们的。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="iconbtn ghost">←</div>
-        <div class="ttl small">关于</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div style="text-align:center;padding:26px 0 22px">
-          <div style="width:66px;height:66px;border-radius:19px;
-            background:var(--primary);color:var(--on-primary);margin:0 auto 13px;
-            display:flex;align-items:center;justify-content:center;font-size:31px">▦</div>
-          <div style="font-size:17.5px;font-weight:700">安卓工具合集</div>
-          <div style="font-size:12.5px;color:var(--on-surf-var);margin-top:4px">1.4.0</div>
-        </div>
-        <div class="sgroup">
-          <div class="srow"><div class="grow"><div class="sk">版本号</div>
-            <div class="sv">长按复制完整版本串</div></div>
-            <div class="strail">1.4.0 (14)</div></div>
-          <div class="srow"><div class="grow"><div class="sk">插件 SDK</div></div>
-            <div class="strail">1.2.0</div></div>
-          <div class="srow"><div class="grow"><div class="sk">构建类型</div></div>
-            <div class="strail">release</div></div>
-          <div class="srow"><div class="grow"><div class="sk">项目地址</div>
-            <div class="sv">github.com/android-tool-suite</div></div>
-            <div class="strail">›</div></div>
-          <div class="srow"><div class="grow"><div class="sk">开源许可</div></div>
-            <div class="strail">›</div></div>
-        </div>
-        <div class="shint" style="padding-top:8px">
-          插件仓库仅收录 Android Tool Suite 组织维护的插件。</div>
-      </div></div>
-    </div></div>
-  </div>
-</div>
-
-<div class="sectitle">
-  <h2>编辑模式</h2>
-  <p>现在拖拽始终激活：任何长按加移动都会重排，滚动时容易误触发，长按语义还被
-     尺寸菜单和拖拽同时占用。改为显式编辑模式——长按进入并<strong>立刻拿起</strong>
-     被按住的那一项，手指不用抬起重按。撤销栈是目前完全缺失的安全网。</p>
-</div>
-
-<div class="grid">
-
-  <!-- 主页编辑态 -->
-  <div class="cell">
-    <h3>主页 · 编辑态 <span class="tag new">新增</span></h3>
-    <p class="note">每格获得可见的移除按钮和拖拽手柄，手柄之外仍可滚动。
-       末尾「＋ 添加小部件」直接消化隐藏项——现在找回隐藏的小部件要走
-       管理 › 界面管理 › 找插件 › 开关。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar" style="background:var(--secondary-container);
-        color:var(--on-secondary-container)">
-        <div class="iconbtn ghost" style="color:inherit">←</div>
-        <div class="ttl small">编辑主页</div>
-        <div class="iconbtn ghost" style="color:inherit">↺</div>
-        <div class="btn text sm" style="color:var(--on-secondary-container)">完成</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:8px 0 12px">拖动排列 · 点击改尺寸</div>
-        <div class="wgrid">
-          <div class="w c2" style="position:relative;
-            outline:1.5px dashed var(--outline);outline-offset:-1px">
-            <div style="position:absolute;top:-5px;left:-5px;width:19px;height:19px;
-              border-radius:99px;background:var(--error);color:var(--on-error);
-              font-size:12px;display:flex;align-items:center;
-              justify-content:center;font-weight:700">⊖</div>
-            <div class="wl">SHIZUKU</div><div class="wv">已连接</div>
-            <div style="position:absolute;bottom:4px;right:5px;
-              color:var(--on-surf-var);font-size:11px">⋮⋮</div>
-          </div>
-          <div class="w c2" style="position:relative;
-            outline:1.5px dashed var(--outline);outline-offset:-1px">
-            <div style="position:absolute;top:-5px;left:-5px;width:19px;height:19px;
-              border-radius:99px;background:var(--error);color:var(--on-error);
-              font-size:12px;display:flex;align-items:center;
-              justify-content:center;font-weight:700">⊖</div>
-            <div class="wl">无障碍授权</div><div class="wv">3 个收藏</div>
-            <div style="position:absolute;bottom:4px;right:5px;
-              color:var(--on-surf-var);font-size:11px">⋮⋮</div>
-          </div>
-          <div class="w c2" style="position:relative;
-            outline:1.5px dashed var(--outline);outline-offset:-1px">
-            <div style="position:absolute;top:-5px;left:-5px;width:19px;height:19px;
-              border-radius:99px;background:var(--error);color:var(--on-error);
-              font-size:12px;display:flex;align-items:center;
-              justify-content:center;font-weight:700">⊖</div>
-            <div class="wl">PHIGROS</div><div class="wv">16.42</div>
-            <div style="position:absolute;bottom:4px;right:5px;
-              color:var(--on-surf-var);font-size:11px">⋮⋮</div>
-          </div>
-          <div class="w c2" style="border:1.5px dashed var(--primary);
-            background:transparent;align-items:center;justify-content:center;
-            color:var(--primary)">
-            <div style="font-size:20px;text-align:center">＋</div>
-            <div style="font-size:9.5px;font-weight:700;text-align:center">添加小部件</div>
-          </div>
-        </div>
-        <div style="height:14px"></div>
-        <div class="notice"><span>↺</span><div>误操作可用顶栏撤销逐步回退，
-          退出编辑时清空。</div></div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- 拖拽中 -->
-  <div class="cell">
-    <h3>拖拽中 · 落点预览 <span class="tag">保留</span></h3>
-    <p class="note">现有的虚影落点预览逻辑保留，它本身没问题。区别是现在只能在编辑态、
-       且只能从手柄发起，不会在滚动时误触发。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar" style="background:var(--secondary-container);
-        color:var(--on-secondary-container)">
-        <div class="iconbtn ghost" style="color:inherit">←</div>
-        <div class="ttl small">编辑主页</div>
-        <div class="iconbtn ghost" style="color:inherit">↺</div>
-        <div class="btn text sm" style="color:var(--on-secondary-container)">完成</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:8px 0 12px">拖动排列 · 点击改尺寸</div>
-        <div class="wgrid">
-          <div class="w c2" style="position:relative;
-            outline:1.5px dashed var(--outline);outline-offset:-1px">
-            <div class="wl">SHIZUKU</div><div class="wv">已连接</div>
-            <div style="position:absolute;bottom:4px;right:5px;
-              color:var(--on-surf-var);font-size:11px">⋮⋮</div>
-          </div>
-          <div class="w c2" style="background:transparent;
-            border:3px solid var(--primary);
-            box-shadow:inset 0 0 0 99px color-mix(in srgb,var(--primary) 14%,transparent)">
-          </div>
-          <div class="w c2" style="position:relative;
-            outline:1.5px dashed var(--outline);outline-offset:-1px">
-            <div class="wl">PHIGROS</div><div class="wv">16.42</div>
-            <div style="position:absolute;bottom:4px;right:5px;
-              color:var(--on-surf-var);font-size:11px">⋮⋮</div>
-          </div>
-          <div class="w c2" style="border:1.5px dashed var(--primary);
-            background:transparent;align-items:center;justify-content:center;
-            color:var(--primary)">
-            <div style="font-size:20px;text-align:center">＋</div>
-            <div style="font-size:9.5px;font-weight:700;text-align:center">添加小部件</div>
-          </div>
-        </div>
-        <div class="w c2" style="position:absolute;top:104px;left:78px;width:132px;
-          box-shadow:0 10px 24px rgba(0,0,0,.34);transform:rotate(-2.5deg);
-          opacity:.95;z-index:9;background:var(--surf-high);min-height:74px">
-          <div class="wl">无障碍授权</div><div class="wv">3 个收藏</div>
-          <div class="wm">自动启用 · 开启</div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- 尺寸 sheet -->
-  <div class="cell">
-    <h3>尺寸选择 <span class="tag">改动</span></h3>
-    <p class="note">现在是 <code>DropdownMenu</code> 里一串「尺寸 2×2」文字项，
-       读不出实际效果。改成等比缩略图，只渲染该小部件
-       <code>supportedSizes()</code> 声明的尺寸。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar" style="background:var(--secondary-container);
-        color:var(--on-secondary-container)">
-        <div class="iconbtn ghost" style="color:inherit">←</div>
-        <div class="ttl small">编辑主页</div>
-        <div class="iconbtn ghost" style="color:inherit">↺</div>
-        <div class="btn text sm" style="color:var(--on-secondary-container)">完成</div>
-      </div>
-      <div class="body">
-        <div class="scroll" style="opacity:.35">
-          <div class="sub" style="margin:8px 0 12px">拖动排列 · 点击改尺寸</div>
-          <div class="wgrid">
-            <div class="w c2"><div class="wl">SHIZUKU</div>
-              <div class="wv">已连接</div></div>
-            <div class="w c2"><div class="wl">无障碍授权</div>
-              <div class="wv">3 个收藏</div></div>
-          </div>
-        </div>
-        <div class="scrim" style="align-items:flex-end;padding:0">
-          <div class="dlg" style="border-radius:26px 26px 0 0;padding:18px 20px 20px">
-            <div style="width:30px;height:3.5px;border-radius:99px;
-              background:var(--outline-var);margin:0 auto 14px"></div>
-            <div class="dt" style="font-size:15.5px;margin-bottom:16px">无障碍授权</div>
-            <div style="display:flex;gap:22px;align-items:flex-end;
-              justify-content:center;margin-bottom:6px">
-              <div style="text-align:center">
-                <div style="width:52px;height:52px;border-radius:11px;
-                  background:var(--primary-container);border:2px solid var(--primary);
-                  margin-bottom:7px"></div>
-                <div style="font-size:11.5px;font-weight:700;color:var(--primary)">
-                  2×2 ✓</div>
-              </div>
-              <div style="text-align:center">
-                <div style="width:106px;height:52px;border-radius:11px;
-                  background:var(--surf-high);margin-bottom:7px"></div>
-                <div style="font-size:11.5px;font-weight:600;
-                  color:var(--on-surf-var)">4×2</div>
-              </div>
-            </div>
-            <div class="divider"></div>
-            <div class="btn text wide" style="color:var(--error)">从主页移除</div>
-          </div>
-        </div>
-      </div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- 添加小部件 sheet -->
-  <div class="cell">
-    <h3>添加小部件 <span class="tag new">新增</span></h3>
-    <p class="note">把隐藏的小部件找回来，现在唯一路径是
-       管理 › 界面管理 › 找到插件 › 主页开关。这是整个应用里最绕的一条路径。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar" style="background:var(--secondary-container);
-        color:var(--on-secondary-container)">
-        <div class="iconbtn ghost" style="color:inherit">←</div>
-        <div class="ttl small">编辑主页</div>
-        <div class="iconbtn ghost" style="color:inherit">↺</div>
-        <div class="btn text sm" style="color:var(--on-secondary-container)">完成</div>
-      </div>
-      <div class="body">
-        <div class="scroll" style="opacity:.35">
-          <div class="sub" style="margin:8px 0 12px">拖动排列 · 点击改尺寸</div>
-          <div class="wgrid">
-            <div class="w c2"><div class="wl">SHIZUKU</div>
-              <div class="wv">已连接</div></div>
-            <div class="w c2"><div class="wl">无障碍授权</div>
-              <div class="wv">3 个收藏</div></div>
-          </div>
-        </div>
-        <div class="scrim" style="align-items:flex-end;padding:0">
-          <div class="dlg" style="border-radius:26px 26px 0 0;padding:18px 18px 20px">
-            <div style="width:30px;height:3.5px;border-radius:99px;
-              background:var(--outline-var);margin:0 auto 14px"></div>
-            <div class="dt" style="font-size:15.5px;margin-bottom:4px">添加小部件</div>
-            <div class="cd" style="margin-bottom:12px">已从主页隐藏的小部件</div>
-            <div class="card flat" style="padding:11px 12px">
-              <div class="row">
-                <div class="ibox sm">🎲</div>
-                <div class="grow"><div class="ct" style="font-size:13px">抽卡分析</div>
-                  <div class="cd" style="margin-top:1px">2×2 或 4×2</div></div>
-                <div class="btn sm">添加</div>
-              </div>
-            </div>
-            <div class="card flat" style="padding:11px 12px;margin-bottom:0">
-              <div class="row">
-                <div class="ibox sm">📋</div>
-                <div class="grow"><div class="ct" style="font-size:13px">剪贴板历史</div>
-                  <div class="cd" style="margin-top:1px">4×1</div></div>
-                <div class="btn sm">添加</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
-
-  <!-- 工具编辑态 -->
-  <div class="cell">
-    <h3>工具 · 编辑态 <span class="tag new">新增</span></h3>
-    <p class="note">同一套手势。行内开关写的是 <code>PREF_HIDDEN_TOOLS</code>，
-       和管理屏「在工具页显示」同一个偏好。<strong>不含启用／停用</strong>，
-       避免在工具页误停用插件。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar" style="background:var(--secondary-container);
-        color:var(--on-secondary-container)">
-        <div class="iconbtn ghost" style="color:inherit">←</div>
-        <div class="ttl small">编辑工具</div>
-        <div class="iconbtn ghost" style="color:inherit">↺</div>
-        <div class="btn text sm" style="color:var(--on-secondary-container)">完成</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="sub" style="margin:8px 0 12px">拖动手柄排序 · 开关控制是否显示</div>
-        <div class="card" style="padding:12px 13px">
-          <div class="row">
-            <div style="color:var(--on-surf-var);font-size:13px">⋮⋮</div>
-            <div class="ibox sm">🛡</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Shizuku 授权</div></div>
-            <div class="sw on"></div>
-          </div>
-        </div>
-        <div class="card" style="padding:12px 13px">
-          <div class="row">
-            <div style="color:var(--on-surf-var);font-size:13px">⋮⋮</div>
-            <div class="ibox sm">♿</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">无障碍授权</div></div>
-            <div class="sw on"></div>
-          </div>
-        </div>
-        <div class="card" style="padding:12px 13px;
-          box-shadow:0 6px 18px rgba(0,0,0,.24);background:var(--surf-high)">
-          <div class="row">
-            <div style="color:var(--primary);font-size:13px">⋮⋮</div>
-            <div class="ibox sm">🎵</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">Phigros</div></div>
-            <div class="sw on"></div>
-          </div>
-        </div>
-        <div class="card" style="padding:12px 13px;opacity:.5">
-          <div class="row">
-            <div style="color:var(--on-surf-var);font-size:13px">⋮⋮</div>
-            <div class="ibox sm">🎲</div>
-            <div class="grow"><div class="ct" style="font-size:13.5px">抽卡分析</div>
-              <div class="cd" style="margin-top:1px">已隐藏</div></div>
-            <div class="sw off"></div>
-          </div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem on"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
-</div>
-
-<div class="sectitle">
-  <h2>更新检查的四种状态</h2>
-  <p>核心改动：自动检查在无更新和失败时<strong>完全静默</strong>，不再留下常驻横幅。
-     手动检查一定有反馈。进度落到具体插件卡片，不再是全局横幅。</p>
-</div>
-
-<div class="grid">
-
-  <!-- 更新弹窗 -->
-  <div class="cell">
-    <h3>有更新：弹窗 <span class="tag new">新增</span></h3>
-    <p class="note">应用与插件更新合并在一个弹窗。「本次不再提示」记住这批版本号，
-       避免每次启动都被同一条更新拦住。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar"><div class="ttl">安卓工具合集</div>
-        <div class="iconbtn ghost">⚙</div></div>
-      <div class="body">
-        <div class="scroll" style="opacity:.4">
-          <div class="eyebrow">8月11日 星期二</div>
-          <div class="h1">工具台</div>
-          <div class="sub">集中查看运行状态，快速进入常用工具。</div>
-          <div style="height:14px"></div>
-          <div class="card hi"><div class="row"><div style="font-size:24px">▦</div>
-            <div class="grow"><div class="ct">4 个工具已就绪</div>
-            <div class="cd">4 个主页组件</div></div></div></div>
-        </div>
-        <div class="scrim"><div class="dlg">
-          <div class="dt">发现 3 项更新</div>
-          <div class="upd"><div class="ibox sm">▦</div>
-            <div class="un">安卓工具合集</div><div class="uv">1.4.0 → 1.5.0</div></div>
-          <div class="upd"><div class="ibox sm">🎲</div>
-            <div class="un">抽卡分析</div><div class="uv">1.6.0 → 1.7.0</div></div>
-          <div class="upd"><div class="ibox sm">🎵</div>
-            <div class="un">Phigros</div><div class="uv">2.2.0 → 2.3.0</div></div>
-          <div class="dacts">
-            <div class="btn text sm">本次不再提示</div>
-            <div class="btn text sm">稍后</div>
-            <div class="btn sm">全部更新</div>
-          </div>
+          </div></div>
+          <div class="nav"><div class="nav-item active"><span class="nav-icon">⌂</span>主页</div><div class="nav-item"><span class="nav-icon">▦</span>工具</div><div class="nav-item"><span class="nav-icon">☷</span>管理</div><div class="nav-item"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item"><span class="nav-icon">⚙</span>设置</div></div>
         </div></div>
+      </article>
+
+      <article class="phone-case">
+        <div class="phone-label"><h3>工具</h3><span>点按 + 长按 + 拖动</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="phone-content"><div class="phone-scroll">
+            <p class="screen-copy">点击打开 · 长按拖动排序或调整</p>
+            <div class="app-card"><div class="row top"><div class="icon-box">🛡</div><div class="grow"><div class="row"><div class="ct grow">Shizuku 授权</div><span class="meta">v1.5.1</span></div><div class="cd">为需要系统能力的插件建立受控连接</div></div></div></div>
+            <div class="app-card"><div class="row top"><div class="icon-box">♿</div><div class="grow"><div class="row"><div class="ct grow">无障碍授权</div><span class="meta">v1.3.1</span></div><div class="cd">通过 Shizuku 管理设备上的无障碍服务</div></div></div></div>
+            <div class="app-card"><div class="row top"><div class="icon-box">♫</div><div class="grow"><div class="row"><div class="ct grow">Phigros Data Studio</div><span class="meta">v2.2.1</span></div><div class="cd">本地优先的云存档分析与制图</div></div></div></div>
+            <div class="app-card"><div class="row top"><div class="icon-box">✦</div><div class="grow"><div class="row"><div class="ct grow">抽卡分析</div><span class="meta">v1.6.1</span></div><div class="cd">原神与星穹铁道抽卡记录分析</div></div></div></div>
+            <div class="row" style="margin-top:10px"><span class="meta grow">1 个工具已隐藏</span><span class="section-action">在管理中恢复</span></div>
+          </div></div>
+          <div class="nav"><div class="nav-item"><span class="nav-icon">⌂</span>主页</div><div class="nav-item active"><span class="nav-icon">▦</span>工具</div><div class="nav-item"><span class="nav-icon">☷</span>管理</div><div class="nav-item"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item"><span class="nav-icon">⚙</span>设置</div></div>
+        </div></div>
+      </article>
+
+      <article class="phone-case">
+        <div class="phone-label"><h3>管理</h3><span>摘要可扫 · 多项展开</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="phone-content"><div class="phone-scroll">
+            <p class="screen-copy">控制插件是否启用，以及在哪里显示。</p>
+            <div class="section-title"><div><strong>系统工具</strong></div></div>
+            <div class="app-card" style="padding:13px"><div class="row"><div class="icon-box dense">🛡</div><div class="grow"><div class="ct">Shizuku 授权</div><div class="cd">v1.5.1 · 工具页 · 主页</div></div><div class="switch on"></div><div class="chev">⌄</div></div></div>
+            <div class="section-title"><div><strong>已安装插件</strong><small>3 个</small></div></div>
+            <div class="app-card outlined" style="padding:13px"><div class="row"><div class="icon-box dense">♫</div><div class="grow"><div class="ct">Phigros Data Studio</div><div class="cd">v2.2.1 · 工具页 · 主页</div></div><div class="switch on"></div><div class="chev">⌃</div></div><div class="divider"></div><div class="subrow"><span class="grow">在工具页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">在主页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">检查更新</span><div class="switch on"></div></div><div class="button-row"><button class="btn outline flex">导出</button><button class="btn outline flex">删除</button></div></div>
+            <div class="app-card" style="padding:13px"><div class="row"><div class="icon-box dense">✦</div><div class="grow"><div class="ct">抽卡分析</div><div class="cd">v1.6.1 · 仅工具页 · 不检查更新</div></div><div class="switch on"></div><div class="chev">⌄</div></div></div>
+            <div class="app-card dim" style="padding:13px"><div class="row"><div class="icon-box dense">♿</div><div class="grow"><div class="ct">无障碍授权</div><div class="cd">v1.3.1 · 已停用</div></div><div class="switch"></div><div class="chev">⌄</div></div></div>
+          </div></div>
+          <div class="nav"><div class="nav-item"><span class="nav-icon">⌂</span>主页</div><div class="nav-item"><span class="nav-icon">▦</span>工具</div><div class="nav-item active"><span class="nav-icon">☷</span>管理</div><div class="nav-item"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item"><span class="nav-icon">⚙</span>设置</div></div>
+        </div></div>
+      </article>
+
+      <article class="phone-case">
+        <div class="phone-label"><h3>仓库</h3><span>已安装 / 可安装</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="phone-content"><div class="phone-scroll">
+            <div class="section-title" style="margin-top:0"><div><strong>已安装</strong><small>3 个 · 1 项可更新</small></div><span class="section-action">↻　全部更新</span></div>
+            <div class="app-card"><div class="row"><div class="icon-box dense">✦</div><div class="grow"><div class="ct">抽卡分析 <span class="verified">✓</span></div><div class="cd">1.6.1 → 1.7.0</div></div><span class="chev">⋮</span></div><button class="btn full">更新到 v1.7.0</button><div class="progress"><i></i></div><div class="meta" style="margin-top:5px">正在下载 64%</div></div>
+            <div class="app-card"><div class="row"><div class="icon-box dense">♫</div><div class="grow"><div class="ct">Phigros Data Studio <span class="verified">✓</span></div><div class="cd">已是最新 · 2.2.1</div></div><span class="chev">⋮</span></div></div>
+            <div class="section-title"><div><strong>可安装</strong><small>1 个</small></div></div>
+            <div class="app-card"><div class="row"><div class="icon-box dense">▤</div><div class="grow"><div class="ct">剪贴板历史 <span class="verified">✓</span></div><div class="cd">1.0.0</div></div><span class="chev">⋮</span></div><div class="cd" style="margin-top:8px">保存并搜索最近复制的文本</div><button class="btn full">安装</button></div>
+            <button class="btn outline full">＋ 导入本地插件包</button>
+          </div></div>
+          <div class="nav"><div class="nav-item"><span class="nav-icon">⌂</span>主页</div><div class="nav-item"><span class="nav-icon">▦</span>工具</div><div class="nav-item"><span class="nav-icon">☷</span>管理</div><div class="nav-item active"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item"><span class="nav-icon">⚙</span>设置</div></div>
+        </div></div>
+      </article>
+
+      <article class="phone-case">
+        <div class="phone-label"><h3>设置</h3><span>分组列表 · 不堆卡片</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="phone-content flush"><div class="phone-scroll">
+            <div class="settings-group"><div class="settings-label">外观</div><div class="settings-row"><div class="grow"><div class="key">主题</div></div><div class="trail">跟随系统 ▾</div></div><div class="settings-row"><div class="grow"><div class="key">配色</div><div class="support">应用自带配色，或跟随系统壁纸取色</div></div><div class="trail">应用自带 ▾</div></div></div>
+            <div class="settings-group"><div class="settings-label">更新</div><div class="settings-row"><div class="grow"><div class="key">自动检查更新</div><div class="support">启动时静默检查，仅在有更新时提示</div></div><div class="switch on"></div></div><div class="settings-row"><div class="grow"><div class="key emphasis">立即检查更新</div></div></div><div class="settings-row"><div class="grow"><div class="key">上次检查</div></div><div class="trail">今天 14:32</div></div></div>
+            <div class="settings-group"><div class="settings-label">备份与迁移</div><div class="settings-row"><div class="grow"><div class="key emphasis">导出迁移包</div></div></div><div class="settings-row"><div class="grow"><div class="key emphasis">导入迁移包</div></div></div><div class="settings-row" style="min-height:auto;padding-top:2px"><div class="support">包含布局与插件包，不含账号与插件数据。</div></div></div>
+            <div class="settings-group"><div class="settings-label">关于</div><div class="settings-row"><div class="icon-box dense">🔧</div><div class="grow"><div class="key">安卓工具合集</div><div class="support">1.5.1</div></div><div class="trail">›</div></div></div>
+          </div></div>
+          <div class="nav"><div class="nav-item"><span class="nav-icon">⌂</span>主页</div><div class="nav-item"><span class="nav-icon">▦</span>工具</div><div class="nav-item"><span class="nav-icon">☷</span>管理</div><div class="nav-item"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item active"><span class="nav-icon">⚙</span>设置</div></div>
+        </div></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="plugin">
+    <div class="section-head">
+      <div><div class="section-no">05 · PLUGIN SCREEN</div><h2>插件共享外壳，领域内容留在内部</h2></div>
+      <p>返回顶栏由宿主提供。插件在内容区使用页签、筛选、摘要和详情卡，不再复制应用级导航。</p>
+    </div>
+    <div class="phone-grid">
+      <article class="phone-case">
+        <div class="phone-label"><h3>插件详情</h3><span>标准返回顶栏</span></div>
+        <div class="phone"><div class="app">
+          <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
+          <div class="topbar"><span class="icon">←</span><strong>抽卡分析</strong><span class="icon">⋮</span></div>
+          <div class="tabs"><span class="tab active">总览</span><span class="tab">记录</span><span class="tab">获取</span><span class="tab">数据</span></div>
+          <div class="phone-content"><div class="phone-scroll">
+            <div class="chip-row"><span class="chip selected">原神 · 812</span><span class="chip">星铁 · 190</span></div>
+            <div class="app-card"><div class="meta">本账号欧非判定</div><div style="margin:3px 0;font-size:21px;font-weight:800;color:var(--primary)">小欧</div><div class="cd">基于限定池 UP 获取成本</div><div class="metric-row"><div class="metric"><small>总抽数</small><b>812</b></div><div class="metric"><small>五星</small><b>11</b></div><div class="metric"><small>UP</small><b class="success-text">7</b></div><div class="metric"><small>歪</small><b class="danger-text">4</b></div></div></div>
+            <div class="app-card"><div class="row"><div class="grow"><div class="ct">角色活动祈愿</div><div class="cd">312 抽 · 5 个 UP 角色</div></div><div style="text-align:right"><div style="font-size:17px;font-weight:800">72 抽</div><div class="meta">当前进度 / 90</div></div></div><div class="progress"><i style="width:80%"></i></div></div>
+            <div class="section-title"><div><strong>最近记录</strong><small>颜色始终配合文字标签</small></div></div>
+            <div class="app-card"><div class="row"><div class="icon-box dense">5★</div><div class="grow"><div class="ct">限定角色 A</div><div class="cd">第 72 抽 · 2026-08-12</div></div><span class="pill good">UP</span></div></div>
+          </div></div>
+        </div></div>
+      </article>
+
+      <article class="panel layout-panel" style="align-self:stretch">
+        <h3>插件内容顺序</h3>
+        <div class="rule-list">
+          <div class="rule"><b>1</b><span>账号、游戏或数据源选择。</span></div>
+          <div class="rule"><b>2</b><span>当前关键结果或状态摘要。</span></div>
+          <div class="rule"><b>3</b><span>页签与筛选，不重复页面大标题。</span></div>
+          <div class="rule"><b>4</b><span>领域详情卡；同一卡片只保留一个最强焦点。</span></div>
+          <div class="rule"><b>5</b><span>导入、导出、删除等维护动作放到后部。</span></div>
+        </div>
+        <div class="baseline-note" style="margin-top:24px"><strong>领域色的边界</strong>稀有度、谱面难度可保留插件自有色；成功、警告、危险和信息直接使用 <code>SuiteSemantic.current</code>。所有颜色都要配文字或图标。</div>
+        <div class="baseline-note"><strong>主题的边界</strong>插件通过 <code>composePluginView</code> 继承宿主主题。不要自行读取系统深色状态后覆盖用户在应用中的选择。</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="components">
+    <div class="section-head">
+      <div><div class="section-no">06 · COMPONENTS & STATES</div><h2>共享组件与反馈强度</h2></div>
+      <p>组件不是装饰清单，而是对信息语义的约束。同一种状态在宿主和插件里应获得同一种表达。</p>
+    </div>
+    <div class="component-grid">
+      <article class="panel component"><h3>卡片与图标底座</h3><p>24 dp 主卡片；普通列表 48 dp 图标底座，密集列表 38 dp。</p><div class="sample-card"><div class="row"><div class="icon-box">♫</div><div class="grow"><div class="ct">Phigros Data Studio</div><div class="cd">本地优先的云存档分析与制图</div></div><span class="meta">v2.2.1</span></div></div></article>
+      <article class="panel component"><h3>动作层级</h3><p>一个主要下一步；次要动作使用描边；轻量动作使用文字按钮。</p><div class="component-stack"><button class="btn full">获取记录</button><button class="btn outline full">从文件导入</button><button class="btn text full">查看 UIGF 标准</button></div></article>
+      <article class="panel component"><h3>筛选与状态</h3><p>FilterChip 用于可反复切换的条件；StatusChip 只显示短状态。</p><div class="chip-row"><span class="chip selected">全部卡池</span><span class="chip">角色活动</span><span class="chip">武器活动</span></div><div class="chip-row" style="margin-top:18px"><span class="pill good">已启用</span><span class="pill">当前</span><span class="pill">已验证</span></div></article>
+    </div>
+    <div class="state-grid" style="margin-top:16px">
+      <article class="panel state"><h3>加载</h3><div class="row"><div class="spinner"></div><p>正在读取设备服务…</p></div></article>
+      <article class="panel state"><h3>空态</h3><div class="sample-card"><div class="ct">还没有抽卡记录</div><p style="margin-top:5px">前往“获取”同步，也可以导入 UIGF 文件。</p></div></article>
+      <article class="panel state"><h3>可恢复错误</h3><div class="error-state"><div class="ct">仓库刷新失败</div><p style="margin-top:5px">网络连接超时</p><button class="btn" style="margin-top:10px">重试</button></div></article>
+      <article class="panel state"><h3>短暂反馈</h3><div class="snackbar"><span>检查失败：网络连接超时</span><b>重试</b></div><p style="margin-top:14px">主动操作有反馈；自动检查失败保持静默。</p></article>
+    </div>
+    <div class="panel feedback-board">
+      <div class="dialog-sample">
+        <h3>发现 3 项更新</h3>
+        <div class="update-line"><div class="icon-box dense">🔧</div><div class="ct grow">安卓工具合集</div><span class="transition">1.5.1 → 1.6.0</span></div>
+        <div class="update-line"><div class="icon-box dense">✦</div><div class="ct grow">抽卡分析</div><span class="transition">1.6.1 → 1.7.0</span></div>
+        <div class="update-line"><div class="icon-box dense">♫</div><div class="ct grow">Phigros</div><span class="transition">2.2.1 → 2.3.0</span></div>
+        <div class="button-row" style="justify-content:flex-end;margin-top:14px"><button class="btn text">本次不再提示</button><button class="btn text">稍后</button><button class="btn">全部更新</button></div>
       </div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
+      <div>
+        <div class="section-no">UPDATE FEEDBACK</div>
+        <h3 style="margin:7px 0 9px">集中决策，局部执行</h3>
+        <p class="screen-copy">自动检查只有发现更新才弹出；无更新和失败都静默。用户选择更新后，实际下载进度回到对应应用或插件卡片，不让弹窗长期阻塞页面。</p>
       </div>
-    </div></div>
-  </div>
+    </div>
+  </section>
 
-  <!-- 自动检查无更新 -->
-  <div class="cell">
-    <h3>自动检查无更新 <span class="tag new">静默</span></h3>
-    <p class="note">界面上没有任何痕迹。现在这里会常驻一条不可关闭的
-       「已是最新版本」横幅。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar"><div class="ttl">安卓工具合集</div>
-        <div class="iconbtn ghost">⚙</div></div>
-      <div class="body"><div class="scroll">
-        <div class="eyebrow">8月11日 星期二</div>
-        <div class="h1">工具台</div>
-        <div class="sub">集中查看运行状态，快速进入常用工具。</div>
-        <div style="height:14px"></div>
-        <div class="card hi"><div class="row"><div style="font-size:24px">▦</div>
-          <div class="grow"><div class="ct">4 个工具已就绪</div>
-          <div class="cd">4 个主页组件</div></div></div></div>
-        <div class="sechead"><div><div class="st">主页小部件</div>
-          <div class="ss">长按调整大小或隐藏</div></div></div>
-        <div class="wgrid">
-          <div class="w c2"><div class="wl">SHIZUKU</div>
-            <div class="wv">已连接</div><div class="wm">UID 2000</div></div>
-          <div class="w c2"><div class="wl">无障碍授权</div>
-            <div class="wv">3 个收藏</div><div class="wm">自动启用 · 开启</div></div>
-          <div class="w c4"><div class="wl">PHIGROS DATA STUDIO</div>
-            <div class="wv">16.4231</div>
-            <div class="wm">Sonnet · 1024 条成绩</div></div>
-        </div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem on"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem"><div class="ni">⇩</div>仓库</div>
-      </div>
-    </div></div>
-  </div>
+  <section class="section" id="interaction">
+    <div class="section-head">
+      <div><div class="section-no">07 · INTERACTION</div><h2>保留现行长按编辑方式</h2></div>
+      <p>点按、长按菜单和长按拖动共用同一对象，但按是否发生移动区分结果；读屏另有等价自定义动作。</p>
+    </div>
+    <table class="interaction-table">
+      <thead><tr><th>位置</th><th>点按</th><th>长按后不移动</th><th>长按并拖动</th><th>恢复入口</th></tr></thead>
+      <tbody>
+        <tr><td>主页小部件</td><td>进入所属插件</td><td>调整尺寸或从主页移除</td><td>显示落点虚影，松手保存排序</td><td>分段右侧“添加 N”</td></tr>
+        <tr><td>工具卡</td><td>打开工具</td><td>隐藏、停用或前往管理</td><td>显示落点虚影，松手保存排序</td><td>列表末尾“在管理中恢复”</td></tr>
+        <tr><td>管理卡</td><td>整行展开／收起；Switch 独立操作</td><td>无额外语义</td><td>不支持拖动</td><td>展开区直接修改显示状态</td></tr>
+      </tbody>
+    </table>
+    <div class="baseline-note"><strong>不采用旧版编辑态</strong>显式编辑模式、常驻拖拽手柄、左上角移除标记、撤销栈、尺寸缩略图 sheet 和工具编辑态可见性开关，不属于当前设计基线，也不再作为后续待办。</div>
+  </section>
 
-  <!-- 手动检查无更新 -->
-  <div class="cell">
-    <h3>手动检查无更新 <span class="tag">Snackbar</span></h3>
-    <p class="note">用户主动发起就必须有反馈。用 Snackbar 而不是常驻横幅，
-       几秒后自行消失。宿主目前 0 处 Snackbar、1 处 Toast。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar"><div class="iconbtn ghost">←</div>
-        <div class="ttl small">设置</div></div>
-      <div class="body">
-        <div class="scroll">
-          <div class="sgroup">
-            <div class="slabel">外观</div>
-            <div class="srow"><div class="grow"><div class="sk">主题</div></div>
-              <div class="strail">跟随系统 ▾</div></div>
-            <div class="srow"><div class="grow"><div class="sk">配色</div>
-              <div class="sv">品牌配色，或跟随系统壁纸取色</div></div>
-              <div class="strail">品牌配色 ▾</div></div>
-          </div>
-          <div class="sgroup">
-            <div class="slabel">更新</div>
-            <div class="srow"><div class="grow"><div class="sk">自动检查更新</div>
-              <div class="sv">启动时静默检查，仅在有更新时提示</div></div>
-              <div class="sw on"></div></div>
-            <div class="srow"><div class="grow">
-              <div class="sk" style="color:var(--primary)">立即检查更新</div></div></div>
-            <div class="srow"><div class="grow"><div class="sk">上次检查</div></div>
-              <div class="strail">刚刚</div></div>
-          </div>
-        </div>
-        <div class="snack"><div class="grow">已是最新版本</div></div>
-      </div>
-    </div></div>
-  </div>
+  <section class="section" id="copy">
+    <div class="section-head">
+      <div><div class="section-no">08 · COPY & REVIEW</div><h2>写状态、下一步和后果</h2></div>
+      <p>安全与数据范围需要保留，但要使用用户理解的结果语言，不用架构自述替代说明。</p>
+    </div>
+    <table class="copy-table">
+      <thead><tr><th>避免</th><th>推荐</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td>要求宿主 versionCode ≥ 18</td><td>需要应用 1.5.0 或更高版本</td><td>版本可理解，也能直接给“更新应用”</td></tr>
+        <tr><td>3 个内置 · 1 个外部</td><td>4 个工具已就绪</td><td>不暴露实现分类</td></tr>
+        <tr><td>仓库索引签名验证成功</td><td>已验证发布</td><td>展示结果，不展示机制</td></tr>
+        <tr><td>操作失败</td><td>仓库刷新失败：网络连接超时</td><td>说明失败对象与原因</td></tr>
+        <tr><td>确定</td><td>删除插件／全部更新／重新安装</td><td>按钮直接表达后果</td></tr>
+      </tbody>
+    </table>
+    <div class="guidance-grid" style="margin-top:18px">
+      <article class="panel guidance"><h3>应该</h3><div class="do-list"><div class="do-item"><span class="mark do">✓</span><span>复用 SDK token、共享组件和成对语义色。</span></div><div class="do-item"><span class="mark do">✓</span><span>为空、加载、失败、禁用和处理中状态提供明确设计。</span></div><div class="do-item"><span class="mark do">✓</span><span>让整行、Switch、菜单和读屏动作都能独立操作。</span></div><div class="do-item"><span class="mark do">✓</span><span>同时检查浅色、深色、动态取色、手机与宽屏。</span></div></div></article>
+      <article class="panel guidance"><h3>不要</h3><div class="do-list"><div class="do-item"><span class="mark dont">×</span><span>复制一套近似颜色、8/18/20/22 dp 卡片圆角或浅色专用组件。</span></div><div class="do-item"><span class="mark dont">×</span><span>给每个设置行加装饰图标，或把普通版本号做成伪按钮。</span></div><div class="do-item"><span class="mark dont">×</span><span>用 Toast 或常驻横幅承载需要阅读、重试或仅短暂存在的结果。</span></div><div class="do-item"><span class="mark dont">×</span><span>把旧预览中的四项底栏、全局顶栏或显式编辑态重新当成规范。</span></div></div></article>
+    </div>
+  </section>
 
-  <!-- 手动检查失败 -->
-  <div class="cell">
-    <h3>检查失败 <span class="tag">带重试</span></h3>
-    <p class="note">失败原因 + 重试动作。自动检查失败则完全静默——用户没主动发起，
-       网络波动不该产生噪音。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar"><div class="iconbtn ghost">←</div>
-        <div class="ttl small">设置</div></div>
-      <div class="body">
-        <div class="scroll">
-          <div class="sgroup">
-            <div class="slabel">外观</div>
-            <div class="srow"><div class="grow"><div class="sk">主题</div></div>
-              <div class="strail">跟随系统 ▾</div></div>
-            <div class="srow"><div class="grow"><div class="sk">配色</div>
-              <div class="sv">品牌配色，或跟随系统壁纸取色</div></div>
-              <div class="strail">品牌配色 ▾</div></div>
-          </div>
-          <div class="sgroup">
-            <div class="slabel">更新</div>
-            <div class="srow"><div class="grow"><div class="sk">自动检查更新</div>
-              <div class="sv">启动时静默检查，仅在有更新时提示</div></div>
-              <div class="sw on"></div></div>
-            <div class="srow"><div class="grow">
-              <div class="sk" style="color:var(--primary)">立即检查更新</div></div></div>
-            <div class="srow"><div class="grow"><div class="sk">上次检查</div></div>
-              <div class="strail">昨天 09:15</div></div>
-          </div>
-        </div>
-        <div class="snack"><div class="grow">检查失败：网络连接超时</div>
-          <div class="sa">重试</div></div>
-      </div>
-    </div></div>
-  </div>
-</div>
-
-<div class="sectitle">
-  <h2>另外两处修复</h2>
-  <p>插件详情页的返回方式和不兼容提示，都是现有实现里比较明显的问题。</p>
-</div>
-
-<div class="grid">
-
-  <!-- 插件详情页 -->
-  <div class="cell">
-    <h3>插件详情页 <span class="tag">修复</span></h3>
-    <p class="note">悬浮在左下角、没有导航栏 inset 的返回按钮改成标准顶栏。
-       同时修掉重复叠加的状态栏 inset。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar">
-        <div class="iconbtn ghost">←</div>
-        <div class="ttl small">抽卡分析</div>
-        <div class="iconbtn ghost">⋮</div>
-      </div>
-      <div class="body"><div class="scroll">
-        <div class="btns" style="margin-bottom:10px">
-          <div class="chip on">原神 · 812…</div>
-          <div class="chip">星铁 · 190…</div>
-        </div>
-        <div class="btns" style="margin-bottom:12px;gap:14px;
-          border-bottom:1px solid var(--outline-var);padding-bottom:8px">
-          <span style="font-size:12.5px;font-weight:700;color:var(--primary);
-            border-bottom:2px solid var(--primary);padding-bottom:6px">总览</span>
-          <span style="font-size:12.5px;color:var(--on-surf-var)">记录</span>
-          <span style="font-size:12.5px;color:var(--on-surf-var)">获取</span>
-          <span style="font-size:12.5px;color:var(--on-surf-var)">数据</span>
-        </div>
-        <div class="card">
-          <div style="font-size:10.5px;font-weight:700;color:var(--on-surf-var)">
-            本账号欧非判定</div>
-          <div style="font-size:19px;font-weight:700;color:var(--primary);
-            margin:3px 0 4px">小欧</div>
-          <div class="cd">基于限定池 UP 获取成本</div>
-          <div class="divider"></div>
-          <div class="row" style="justify-content:space-between">
-            <div><div style="font-size:9.5px;color:var(--on-surf-var)">总抽数</div>
-              <div style="font-size:15px;font-weight:700;color:var(--primary)">812</div></div>
-            <div><div style="font-size:9.5px;color:var(--on-surf-var)">五星</div>
-              <div style="font-size:15px;font-weight:700;color:#D99A19">11</div></div>
-            <div><div style="font-size:9.5px;color:var(--on-surf-var)">UP</div>
-              <div style="font-size:15px;font-weight:700;color:var(--success)">7</div></div>
-            <div><div style="font-size:9.5px;color:var(--on-surf-var)">歪</div>
-              <div style="font-size:15px;font-weight:700;color:var(--error)">4</div></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="row">
-            <div class="grow"><div class="ct">角色活动祈愿</div>
-              <div class="cd">312 抽 · 5 个 UP 角色</div></div>
-            <div style="text-align:right">
-              <div style="font-size:16px;font-weight:700">72 抽</div>
-              <div style="font-size:9.5px;color:var(--on-surf-var)">当前进度 / 90</div></div>
-          </div>
-          <div style="height:9px"></div>
-          <div class="prog"><i style="width:80%"></i></div>
-        </div>
-      </div></div>
-    </div></div>
-  </div>
-
-  <!-- 不兼容 -->
-  <div class="cell">
-    <h3>版本不兼容提示 <span class="tag">文案</span></h3>
-    <p class="note">「要求宿主 versionCode ≥ 18」改成用户能理解的说法，
-       并直接给出解决动作。</p>
-    <div class="phone"><div class="screen">
-      <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
-      <div class="topbar"><div class="ttl">仓库</div>
-        <div class="iconbtn ghost">⟳</div><div class="iconbtn ghost">⚙</div></div>
-      <div class="body"><div class="scroll">
-        <div class="sechead" style="margin-top:2px">
-          <div><div class="st">可安装</div><div class="ss">2 个</div></div></div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">📋</div>
-            <div class="grow"><div class="ct">剪贴板历史</div>
-              <div class="cd">1.0.0</div></div>
-            <div class="iconbtn">⋮</div>
-          </div>
-          <div style="height:9px"></div>
-          <div class="btn out wide sm">安装</div>
-        </div>
-        <div class="card">
-          <div class="row">
-            <div class="ibox sm">🔋</div>
-            <div class="grow"><div class="ct">电池统计</div>
-              <div class="cd">2.0.0</div></div>
-            <div class="iconbtn">⋮</div>
-          </div>
-          <div style="height:10px"></div>
-          <div class="notice warn">
-            <span>⚠</span><div>需要应用 1.5.0 或更高版本</div></div>
-          <div style="height:9px"></div>
-          <div class="btn wide sm">更新应用</div>
-        </div>
-        <div style="height:4px"></div>
-        <div class="btn text wide">＋ 导入本地插件包</div>
-      </div></div>
-      <div class="navbar">
-        <div class="navitem"><div class="ni">⌂</div>主页</div>
-        <div class="navitem"><div class="ni">▤</div>工具</div>
-        <div class="navitem"><div class="ni">⚏</div>管理</div>
-        <div class="navitem on"><div class="ni">⇩</div>仓库<span class="dotn">3</span></div>
-      </div>
-    </div></div>
-  </div>
-</div>
-
-<div class="cmp">
-  <h2>信息架构对照</h2>
-  <div class="cs">同一件事现在需要跨两屏完成，改动后收敛到一处。</div>
-  <table>
-    <tr><th>任务</th><th>现在的路径</th><th>改动后</th></tr>
-    <tr>
-      <td>停用一个插件</td>
-      <td class="was">管理 › 找到卡片 › 开关</td>
-      <td class="now">管理 › 卡片 › 启用插件</td>
-    </tr>
-    <tr>
-      <td>把插件从工具页隐藏</td>
-      <td class="was">管理 › <del>界面管理</del> › 找到同一个插件 › 工具页开关</td>
-      <td class="now"><ins>同一张卡</ins> › 在工具页显示</td>
-    </tr>
-    <tr>
-      <td>删除一个插件</td>
-      <td class="was">管理 › 卡片底部「删除」按钮</td>
-      <td class="now">仓库 › 已安装 › ⋮ › 删除</td>
-    </tr>
-    <tr>
-      <td>导出插件包</td>
-      <td class="was">管理 › 卡片底部「导出」按钮</td>
-      <td class="now">仓库 › 已安装 › ⋮ › 导出</td>
-    </tr>
-    <tr>
-      <td>装一个新插件</td>
-      <td class="was">管理 › <del>插件仓库</del> › 卡片 › 选版本 › 安装</td>
-      <td class="now">仓库 › 可安装 › 安装</td>
-    </tr>
-    <tr>
-      <td>导出迁移包</td>
-      <td class="was">管理 › 第三行第一个按钮（6 个按钮里）</td>
-      <td class="now">设置 › 备份与迁移</td>
-    </tr>
-    <tr>
-      <td>看应用版本号</td>
-      <td class="was"><del>界面上无法查看</del></td>
-      <td class="now">设置 › 关于</td>
-    </tr>
-    <tr>
-      <td>关掉自动检查更新</td>
-      <td class="was"><del>不支持</del></td>
-      <td class="now">设置 › 更新 › 自动检查更新</td>
-    </tr>
-    <tr>
-      <td>把隐藏的小部件放回主页</td>
-      <td class="was">管理 › <del>界面管理</del> › 找到插件 › 主页开关</td>
-      <td class="now">主页 › 长按 › ＋ 添加小部件</td>
-    </tr>
-    <tr>
-      <td>改小部件尺寸</td>
-      <td class="was">长按不动 › 菜单里读「尺寸 2×2」文字项</td>
-      <td class="now">编辑态 › 点击 › <ins>缩略图选择</ins></td>
-    </tr>
-    <tr>
-      <td>撤销拖错的排序</td>
-      <td class="was"><del>不支持，只能再拖回去</del></td>
-      <td class="now">编辑态顶栏 ↺ 撤销</td>
-    </tr>
-    <tr>
-      <td>读屏／键盘重排</td>
-      <td class="was"><del>不支持，仅指针通路</del></td>
-      <td class="now">编辑态 › 每项 semantics 自定义动作</td>
-    </tr>
-  </table>
-</div>
-
-<div class="cmp">
-  <h2>编辑交互对照</h2>
-  <div class="cs">现在拖拽常驻激活，衍生出一串连锁问题。显式编辑模式把它们一次解掉。</div>
-  <table>
-    <tr><th>问题</th><th>现在</th><th>改动后</th></tr>
-    <tr>
-      <td>误触发</td>
-      <td class="was">任何长按 + 移动都进入重排，滚动时容易误触</td>
-      <td class="now">拖拽只从手柄发起，且只在编辑态</td>
-    </tr>
-    <tr>
-      <td>小部件内容不可交互</td>
-      <td class="was">为保护拖拽手势，插件视图上盖了一层吞掉所有 pointer 事件的
-        透明 <code>Box</code>，内部对 TalkBack 也不可见</td>
-      <td class="now"><ins>移除该层</ins>，非编辑态整块交给
-        <code>clickable</code></td>
-    </tr>
-    <tr>
-      <td>长按语义重载</td>
-      <td class="was">按住不动出尺寸菜单，按住并移动进入拖拽，起手完全相同</td>
-      <td class="now">长按只做一件事：进入编辑并拿起</td>
-    </tr>
-    <tr>
-      <td>无 ripple / 焦点</td>
-      <td class="was"><code>dropPreviewReorder</code> 自行判定 click 与 long-press，
-        绕开 <code>Modifier.clickable</code></td>
-      <td class="now">拖拽叠在 <code>clickable</code> 之上而非取代它</td>
-    </tr>
-    <tr>
-      <td>无撤销</td>
-      <td class="was"><del>拖错只能再拖回去</del></td>
-      <td class="now">编辑模式内维护操作栈，退出时清空</td>
-    </tr>
-  </table>
-</div>
-
-<div class="cmp">
-  <h2>文案改写</h2>
-  <div class="cs">实现细节删除，安全提示改写为用户视角。全局把「宿主」换成「应用」——
-    那是架构词汇，代码和文档里保留，不该出现在界面上。</div>
-  <table>
-    <tr><th>位置</th><th>现在</th><th>改动后</th></tr>
-    <tr>
-      <td>管理屏常驻</td>
-      <td class="was">插件代码与宿主运行在同一进程，能够使用宿主进程已有的能力。
-        请只安装来自可信来源的插件。</td>
-      <td class="now">插件拥有与本应用相同的权限，请只安装可信来源的插件。
-        <span class="badge mut">移到仓库首次进入</span></td>
-    </tr>
-    <tr>
-      <td>仓库屏常驻</td>
-      <td class="was">仓库插件会执行在宿主进程中。索引签名与文件哈希只能确认发布来源，
-        不能形成运行时沙箱。</td>
-      <td class="now"><del>删除</del> <span class="why">签名／哈希／沙箱是实现细节</span></td>
-    </tr>
-    <tr>
-      <td>管理屏常驻</td>
-      <td class="was">迁移包只包含宿主布局、仓库选择和插件包，不包含账号凭据或插件业务数据。</td>
-      <td class="now">包含布局与插件包，不含账号与插件数据。
-        <span class="badge mut">移到设置</span></td>
-    </tr>
-    <tr>
-      <td>仓库屏</td>
-      <td class="was">调试仓库展示 main 分支最新通过 CI 的构建，可能尚未经过正式发布验收；
-        切回正式仓库可恢复正式版。</td>
-      <td class="now">调试版本可能不稳定
-        <span class="badge mut">整个渠道切换移入 debug-only 开发者选项</span></td>
-    </tr>
-    <tr>
-      <td>仓库屏</td>
-      <td class="was">要求宿主 versionCode ≥ 18</td>
-      <td class="now">需要应用 1.5.0 或更高版本 <ins>+ 更新应用按钮</ins></td>
-    </tr>
-    <tr>
-      <td>主页摘要</td>
-      <td class="was">3 个内置 · 1 个外部 · 4 个主页组件</td>
-      <td class="now">4 个主页组件 <span class="why">内置／外部是实现区分</span></td>
-    </tr>
-    <tr>
-      <td>主页分区</td>
-      <td class="was">拖动时虚影预览落点；长按后松开可调整或隐藏</td>
-      <td class="now">长按调整大小或隐藏</td>
-    </tr>
-    <tr>
-      <td>工具屏</td>
-      <td class="was">点击打开；拖动时虚影预览落点，松手后保存排序</td>
-      <td class="now">拖动可调整顺序</td>
-    </tr>
-    <tr>
-      <td>Shizuku 插件</td>
-      <td class="was">Shizuku 授权由宿主统一持有。插件与宿主运行在同一进程，
-        请只安装可信插件。</td>
-      <td class="now">授权由应用统一管理，所有插件共享。</td>
-    </tr>
-    <tr>
-      <td>无障碍插件</td>
-      <td class="was">无障碍服务可以读取屏幕内容并执行点击、滑动等操作，
-        请只为完全信任的应用授权。</td>
-      <td class="now"><ins>保留原文</ins>
-        <span class="why">用户视角的真实风险，不是实现细节</span></td>
-    </tr>
-  </table>
-</div>
+  <footer class="footer">本页是 <code>ui-redesign-plan.md</code> 的视觉样例。实现评审时以 plugin-sdk token、共享组件和当前 Compose 行为为最终依据。</footer>
+</main>
 
 <script>
-function setTheme(dark){
-  document.body.classList.toggle('dark', !!dark);
-  document.getElementById('bl').classList.toggle('on', !dark);
-  document.getElementById('bd').classList.toggle('on', !!dark);
+const lightButton = document.getElementById('light-theme');
+const darkButton = document.getElementById('dark-theme');
+
+function setTheme(isDark) {
+  document.body.classList.toggle('dark', isDark);
+  lightButton.classList.toggle('active', !isDark);
+  darkButton.classList.toggle('active', isDark);
+  lightButton.setAttribute('aria-pressed', String(!isDark));
+  darkButton.setAttribute('aria-pressed', String(isDark));
 }
-if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
-  setTheme(1);
-}
+
+lightButton.addEventListener('click', () => setTheme(false));
+darkButton.addEventListener('click', () => setTheme(true));
+
+if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) setTheme(true);
 </script>
 </body>
 </html>

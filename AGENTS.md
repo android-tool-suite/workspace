@@ -111,7 +111,9 @@ gradle -p plugins\gacha-analysis `
 ## 修改规则
 
 - Java/Kotlin 均使用 Java 17 目标；新界面优先沿用现有 Compose 架构。
-- 宿主和插件界面应复用 `app/plugin-sdk/.../SuiteDesignSystem.kt`、`UiKit.java` 及现有组件，保持所有页面、空态、加载态、错误态、拖拽态和弹窗的视觉与交互一致，不要在单个插件中复制一套相近但不同的设计 token。
+- 宿主和插件的 UI 设计、实现与评审必须同时参考根目录的 `docs/ui-redesign-plan.md` 和 `docs/ui-redesign-preview.html`：前者是设计模式、交互和评审规范正文，后者是浅色／深色、宿主页、插件页、组件与响应式布局的样例示范。不得把 HTML 当成脱离规范正文的像素模板，也不得继续采用两份文件中已明确放弃的旧方案。
+- 宿主和插件界面应复用 `app/plugin-sdk/.../SuiteDesignSystem.kt`、`SuiteTokens.kt`、`SuiteSettings.kt`、`SuiteStates.kt` 及现有 Compose 组件，保持所有页面、空态、加载态、错误态、拖拽态和弹窗的视觉与交互一致，不要在单个插件中复制一套相近但不同的设计 token。`UiKit.java` 仅为已有第三方插件的二进制兼容保留，新界面不得使用。
+- 如果实际 Compose 设计系统、已经交付的宿主行为、UI 规范正文或 HTML 样例之间出现差异，先以当前公开 SDK token／组件和已交付行为核实设计基线，再在同一次相关修改中同步更新规范与预览，避免文档继续描述未实施方案。
 - 修改 `plugin-sdk` 的公开 API 时，检查二进制/源码兼容性，同时验证主体和三个插件。发布 SDK 变更时更新 `app/gradle.properties` 中的 `pluginSdkVersion`，并按需要同步插件的 `atsPluginSdkVersion`。
 - 每个子仓库独立维护根目录下的 `CHANGELOG.md`：`app/CHANGELOG.md`、`plugins/accessibility-grant/CHANGELOG.md`、`plugins/phigros-advisor/CHANGELOG.md`、`plugins/gacha-analysis/CHANGELOG.md`。插件仓库缺少该文件时，在下一次需要提升版本的修改中创建。更新日志只记录该子仓库的变化，不把多个仓库的发布内容混写在一起。
 - 如果从刚提交完成的干净状态开始修改，只要更改不属于明确判断的“不应提升版本”情形，就必须在提交前提升受影响子仓库的版本。通常只有纯文档、纯测试、注释/格式化、仓库元数据或不影响运行行为与交付产物的内部整理可以不提升版本；修复、功能、依赖或 SDK/API 变化、用户可感知的 UI/交互变化以及产物行为变化都应提升版本。无法确定时，默认提升版本。
