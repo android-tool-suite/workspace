@@ -25,6 +25,8 @@
 
 - [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)：设计模式规范正文，定义信息架构、导航、视觉 token、共享组件、状态反馈、现行交互、文案、无障碍和评审清单。
 - [`docs/ui-redesign-preview.html`](docs/ui-redesign-preview.html)：与规范配套的可视化样例和预览，可在浏览器中切换浅色／深色并查看宿主页、插件页、组件及响应式布局。
+- [`docs/plugin-runtime-v2-refactor-plan.md`](docs/plugin-runtime-v2-refactor-plan.md)：Android-first 的 Web Tool、可选 WASM、Native Provider、后台任务与分阶段迁移方向。
+- [`docs/plugin-runtime-v2-legacy-data-map.md`](docs/plugin-runtime-v2-legacy-data-map.md)：Migration Bridge 的旧数据 Dataset 映射、加密约束和验收矩阵。
 
 Markdown 负责说明规则与适用边界，HTML 负责示范规则落地后的视觉效果；两者应同时参考，不能只复制样例外观而忽略交互、状态和无障碍要求。若实际 Compose 设计系统、规范正文与预览出现差异，应先以 `app/plugin-sdk` 中当前公开的 token／组件和已交付宿主行为核实事实，再同步更新这两份文档。
 
