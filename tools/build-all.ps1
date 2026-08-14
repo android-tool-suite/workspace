@@ -182,7 +182,9 @@ $manifest = [ordered]@{
 $manifest | ConvertTo-Json -Depth 8 |
     Set-Content -LiteralPath (Join-Path $stagingDirectory 'build-manifest.json') -Encoding utf8
 
-New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+# Staging is complete at this point, so replacing the centralized directory cannot expose
+# a partial build. Reset it to prevent retired artifacts from surviving a successful refresh.
+Reset-SafeDirectory $outputDirectory
 foreach ($file in Get-ChildItem -LiteralPath $stagingDirectory -File) {
     Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $outputDirectory $file.Name) -Force
 }
