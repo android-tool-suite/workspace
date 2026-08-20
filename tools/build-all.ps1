@@ -16,7 +16,7 @@ $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
 $gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
 $sdkRepository = Join-Path $appRoot 'plugin-sdk\build\repository'
-$stagingDirectory = Join-Path $workspaceRoot 'build\distribution-staging'
+$stagingDirectory = Join-Path $workspaceRoot 'temp\build-all-staging'
 $outputDirectory = Join-Path $workspaceRoot 'artifacts'
 
 function Assert-WorkspaceLayout {

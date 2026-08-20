@@ -12,6 +12,8 @@ android-tool-suite/
 ├─ AGENTS.md                      整个工作区的协作规则
 ├─ tools/                         全量构建、状态检查与设备安装工具
 ├─ artifacts/                     全量构建集中产物（Git 忽略）
+├─ temp/                          一次性日志、试跑与构建中转（Git 忽略）
+├─ workspace/                     外部研究仓库与长期本地工作副本（Git 忽略）
 ├─ app/                            主体应用仓库
 │  ├─ app/                        Android 宿主应用
 │  ├─ plugin-sdk/                 插件 API、模型与共享 Compose UI
@@ -187,7 +189,7 @@ adb -s <实体设备序列号> install -r -t .\app\artifacts\android-tool-suite-
 ## 清理、Git 与提交
 
 - 开始前在外层仓库运行 `git status --short`，并分别使用 `git -C app status --short`、`git -C plugin-registry status --short`、`git -C plugins/accessibility-grant status --short`、`git -C plugins/phigros-advisor status --short`、`git -C plugins/gacha-analysis status --short` 检查子仓库，保留用户已有的未提交修改；不要覆盖或回滚无关差异。
-- `.gradle/`、`.kotlin/`、各级 `build/`、临时截图等通常可重新生成；清理前仍应确认路径归属。保留源码、文档、`local.properties` 之外的项目配置，以及用户要求保留的正式产物。
+- `.gradle/`、`.kotlin/`、各组件的标准 Gradle `build/`、`temp/` 中的一次性文件和临时截图通常可重新生成；清理前仍应确认路径归属。外部研究仓库放在根级 `workspace/`，不要与 Gradle输出混放；正式集中产物保留在 `artifacts/`。
 - `local.properties`、IDE 配置、缓存和构建目录不得提交。
 - 用户要求整理并提交时，把“删除可再生产物”和“功能修改”分开处理；按仓库和关注点拆成多个小提交，不要生成跨多个仓库的单体提交。
 - 提交跨仓库修改时，顺序必须是：完成子仓库版本与更新日志检查、验证并提交子仓库、推送或确认对应提交可供外层仓库获取，最后提交外层仓库的子模块指针。外层仓库本身没有应用版本号，单纯更新 gitlink、`.gitmodules` 或工作区文档不触发子仓库版本提升。

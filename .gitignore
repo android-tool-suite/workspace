@@ -2,4 +2,6 @@
 /.codex/
 /.github/modernize/
 /artifacts/
-/build/
+/temp/
+/workspace/
+/LOCAL-ENVIRONMENT.md
