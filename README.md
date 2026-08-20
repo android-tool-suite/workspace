@@ -26,7 +26,11 @@
 - [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)：设计模式规范正文，定义信息架构、导航、视觉 token、共享组件、状态反馈、现行交互、文案、无障碍和评审清单。
 - [`docs/ui-redesign-preview.html`](docs/ui-redesign-preview.html)：与规范配套的可视化样例和预览，可在浏览器中切换浅色／深色并查看宿主页、插件页、组件及响应式布局。
 - [`docs/plugin-runtime-v2-refactor-plan.md`](docs/plugin-runtime-v2-refactor-plan.md)：Android-first 的 Web Tool、可选 WASM、Native Provider、后台任务与分阶段迁移方向。
-- [`docs/plugin-runtime-v2-legacy-data-map.md`](docs/plugin-runtime-v2-legacy-data-map.md)：Migration Bridge 的旧数据 Dataset 映射、加密约束和验收矩阵。
+- [`docs/product-roadmap.md`](docs/product-roadmap.md)：Runtime v2、AI 开发、发布平台与跨平台的独立优先级和依赖关系。
+- [`docs/ai-plugin-development-plan.md`](docs/ai-plugin-development-plan.md)：Developer Agent、AI Provider、草稿运行时与人工批准边界。
+- [`docs/publication-platform-plan.md`](docs/publication-platform-plan.md)：私有草稿、unlisted、公共社区和 GitHub Adapter 的分阶段发布平台。
+- [`docs/data-package-v3.md`](docs/data-package-v3.md)：统一 `.atsbackup` v3 的项目、保护区、兼容和删除边界。
+- [`docs/migration-bridge-data-map.md`](docs/migration-bridge-data-map.md)：Migration Bridge 的旧数据 Dataset 映射、删除约束和验收矩阵。
 
 Markdown 负责说明规则与适用边界，HTML 负责示范规则落地后的视觉效果；两者应同时参考，不能只复制样例外观而忽略交互、状态和无障碍要求。若实际 Compose 设计系统、规范正文与预览出现差异，应先以 `app/plugin-sdk` 中当前公开的 token／组件和已交付宿主行为核实事实，再同步更新这两份文档。
 
@@ -141,6 +145,8 @@ Release 应用默认使用正式插件仓库，但可在仓库页主动切换到
 .\tools\install-latest.ps1 -Serial <设备序列号> -Plugins gacha-analysis
 ```
 
-安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；插件管理页可使用 `.atsbackup` 手动迁移宿主布局与插件。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
+安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；统一 `.atsbackup` v3 可在一个包中组合宿主迁移状态与按插件选择的 API1 Dataset，并兼容 Bridge v2 和旧宿主迁移包导入。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。
+
+根级 `temp/` 只存放可删除的日志、发布试跑和构建中转，`workspace/` 用于不属于本项目 Git 历史的外部研究仓库，正式集中产物仍放在 `artifacts/`。本机私密材料与环境说明必须留在 Git 忽略范围内，不得写入仓库文档或提交历史。

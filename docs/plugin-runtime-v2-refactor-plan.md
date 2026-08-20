@@ -1,7 +1,7 @@
 # Android Tool Suite 插件运行时重构计划
 
 状态：方向基线
-更新日期：2026-08-14
+更新日期：2026-08-20
 实施范围：Android-first；本计划不实现 iOS、Desktop 或其他平台宿主
 
 ## 1. 决策摘要
@@ -19,6 +19,8 @@ Android Tool Suite（ATS）的长期定位是：
 3. Native Provider：使用 Kotlin/Android 实现平台能力，面向高级开发者；Shizuku 属于 Provider，而不是宿主隐藏特权入口。
 
 WASM 是可选能力，不是普通插件的入门门槛。当前只做 Android 运行时，但清单、RPC、数据和任务接口不得暴露 `Activity`、`Context`、`Intent`、Binder 等 Android 类型，以便未来在不重写插件协议的前提下增加其他平台实现。
+
+AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维护在 [ai-plugin-development-plan.md](ai-plugin-development-plan.md) 和 [publication-platform-plan.md](publication-platform-plan.md)，优先级均低于 Runtime v2。总体排序见 [product-roadmap.md](product-roadmap.md)。
 
 ## 2. 本轮目标与非目标
 
@@ -40,7 +42,8 @@ WASM 是可选能力，不是普通插件的入门门槛。当前只做 Android 
 - 不在第一阶段开放不受信任的任意第三方原生代码。
 - 不向普通插件提供裸 `runShellCommand()`、Binder 句柄或任意文件路径。
 - 不以完成强安全沙盒为新运行时首个里程碑；先稳定协议与完整工具闭环。
-- 不在 Migration Bridge 中实现新运行时的数据恢复或双向同步。
+- 不在 Migration Bridge 中实现新运行时的数据恢复或永久双向同步；只保留 API1 旧存储的导出与空环境回灌，用于证明 Dataset 可迁移。
+- 不把 Developer Agent、AI Provider、发布社区或自托管平台作为 Runtime v2 的验收条件。
 
 ## 3. 目标架构
 
@@ -265,7 +268,7 @@ Provider 包使用同一外层模型，只在 `provides` 与平台实现入口�
 ### 10.1 新运行时数据原则
 
 - 默认持久数据由 StorageService 管理；缓存与持久数据分开声明。
-- 凭据存入平台 SecretStore，备份时只有用户明确选择并设置密码才能导出。
+- 凭据存入平台 SecretStore，备份时默认进入受保护区；若未来允许明文，必须像 Bridge v3 一样经过显式选择、风险提示和二次确认。
 - 每个 Dataset 有稳定 ID、格式版本、依赖、敏感标记和恢复模式。
 - 导入先写 staging generation，完成结构、摘要和业务校验后原子切换。
 - 升级/降级根据可读写数据版本判断，不只比较插件版本号。
@@ -273,13 +276,15 @@ Provider 包使用同一外层模型，只在 `provides` 与平台实现入口�
 
 ### 10.2 Migration Bridge
 
-当前 Debug Bridge 是临时交付物，只负责从现有 v1 插件只读导出 `.atsbackup` v2：
+当前 Migration Bridge 已随 1.6.1 正式版交付，使用统一 `.atsbackup` v3 在现有 v1 插件旧存储、宿主迁移状态和归档文件之间完成可验证往返：
 
-- 保留流式写入、摘要、大小限制、Dataset 依赖和 AES-GCM 加密；
-- 不安装新运行时，不恢复数据，不删除旧数据；
-- Debug 应用 ID 与正式版不同，因此只验证 Debug 安装自己的数据；
-- 真正迁移正式版数据前，还需要一次同包名 Release Bridge；
-- Dataset 清单和验收矩阵见 [plugin-runtime-v2-legacy-data-map.md](plugin-runtime-v2-legacy-data-map.md)。
+- 同一文件可包含宿主设置／插件包与按插件选择的 Dataset，明文区和密码保护区物理分离；
+- 保留流式写入、摘要、大小限制、Dataset 依赖和 AES-GCM 加密，并兼容 v2 与旧宿主迁移包导入；
+- 导入先在应用私有缓存完成整包认证和完整性校验，再按依赖恢复到 v1 旧存储；
+- API1 插件可声明独立 Dataset 删除，宿主展开依赖影响并按反向依赖顺序执行；
+- 不安装新运行时，不写入新运行时 generation，也不承担长期双向同步；
+- 早期 Debug 往返已验证格式和插件适配器，1.6.1 同包名正式版负责读取既有正式私有数据；
+- 归档契约见 [data-package-v3.md](data-package-v3.md)，Dataset 清单和验收矩阵见 [migration-bridge-data-map.md](migration-bridge-data-map.md)。
 
 Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后删除，不演化成永久双运行时 API。
 
@@ -287,8 +292,8 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 
 | 原型内容 | 判定 | 后续处理 |
 | --- | --- | --- |
-| `.atsbackup` v2 流式编解码、完整性和加密 | 保留 | 作为 Bridge 与未来备份格式的实现基础，继续补充跨版本测试 |
-| `LegacyDataBridge`、三插件只读适配器和 fixture | 保留但临时 | 只进 Debug/迁移版本；正式迁移完成后删除 |
+| `.atsbackup` v3 分区编解码、完整性和加密 | 保留 | 作为 Bridge 与未来备份语义基础；继续保留 v2 只读兼容测试 |
+| `LegacyDataBridge`、三插件旧数据适配器和 fixture | 保留但临时 | 支持 API1 旧存储的数据管理和正式迁移；越过回滚窗口后删除 |
 | Dataset ID、格式版本、依赖、敏感标记、恢复模式 | 保留语义 | 移入平台无关 schema，不保留 Android `Activity` 接口 |
 | staging generation、校验后切换、回滚思想 | 保留语义并重写 | 由 StorageService 实现，不移植原 `PluginDataManager` 代码 |
 | Runtime Backend 抽象 | 保留概念 | 先实现 Web/Worker Backend；隔离进程或独立 UID 是未来可替换 Backend |
@@ -306,16 +311,17 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 
 每个阶段必须形成可安装、可回滚、可验收的完整组件，不以“新增几个字段”作为里程碑。
 
-### 阶段 0：保存原型并验证 Bridge
+### 阶段 0：保存原型并验证 Bridge（已完成）
 
 交付物：
 
 - V2 原型归档分支；
-- 宿主与三个插件的 Bridge Debug 预发布；
-- Dataset 清单、fixture、加密/损坏包测试；
-- Debug 设备导出与内容校验记录。
+- 宿主与三个插件的 Bridge Debug 预发布及 1.6.1 正式发布；
+- 统一 `.atsbackup` v3、Dataset 清单、fixture、混合保护区和损坏包测试；
+- 按插件导入／导出／删除和 v2／旧迁移包兼容入口；
+- Debug 设备清空前后导入／导出与逐 Dataset 内容校验记录；正式版保留同包名旧数据读取路径。
 
-退出条件：Debug 数据可以完整导出；敏感数据未设置密码时必定失败；现有正式运行时行为不受影响。
+完成情况：Debug 数据已完成代表性数据导出、空环境恢复、再次导出与逐 Dataset 比较；密码区错误密码不修改目标数据；敏感明文需要明确选择。1.6.1 将同一 Bridge 和数据管理界面作为正式版发布。
 
 ### 阶段 1：协议与包格式最小闭环
 
@@ -369,7 +375,7 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 - StorageService、SecretStore、Dataset staging/rollback；
 - 空环境恢复测试；
 - Phigros 与抽卡分析按工具逐一迁移；
-- 正式同包名 Release Bridge 和可回退发布方案。
+- 使用已经发布的 1.6.1 同包名 Migration Bridge 和可回退发布方案完成旧数据导出。
 
 退出条件：每个迁移工具都通过旧数据导出、新环境恢复、业务校验和降级演练。
 
@@ -390,7 +396,7 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 - 易用性：最小插件只需静态 Web 资源与清单。
 - 能力：Tool 只依赖 capability ID 和 schema，不依赖 Shizuku 实现。
 - 后台：没有通过常驻 WebView 模拟后台任务的实现。
-- 数据：敏感 Dataset 强制加密；导入支持 staging、校验和回滚。
+- 数据：敏感 Dataset 默认受保护，显式明文必须二次确认；导入支持 staging、校验和回滚。
 - 发布：组件仓库分别测试、构建和发布，外层只锁定已验证组合。
 - 兼容：现有 API1 正式版在迁移完成前持续可用。
 - 平台：当前产物只有 Android；公共协议中没有 Android 类和物理路径。
