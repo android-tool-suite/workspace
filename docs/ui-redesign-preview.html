@@ -318,6 +318,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 0 24px 88px; }
 .icon-box.dense { width: 34px; height: 34px; border-radius: 12px; font-size: 15px; }
 .widget-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .widget { min-height: 82px; padding: 11px; border-radius: 16px; background: var(--surface-low); display: flex; flex-direction: column; justify-content: center; }
+.widget.provider { background: var(--primary-container); color: var(--on-primary-container); }
 .widget.c2 { grid-column: span 2; }
 .widget.c4 { grid-column: span 4; }
 .widget .label { color: var(--primary); font-size: 9px; font-weight: 800; }
@@ -453,7 +454,7 @@ td:first-child { font-weight: 750; }
 <header class="page-header">
   <div class="header-row">
     <div>
-      <div class="eyebrow">IMPLEMENTED UI BASELINE · SDK 1.2.0</div>
+      <div class="eyebrow">IMPLEMENTED UI BASELINE · SDK 1.4.0 · RUNTIME 2.1</div>
       <h1>Android Tool Suite<br>UI 设计模式规范</h1>
       <p class="lede">以当前已交付的宿主与插件界面为准，展示共享 token、五个一级入口、卡片与设置行、
         长按排序、状态反馈和插件内容模式。这里不再展示未采用的显式编辑模式。</p>
@@ -597,8 +598,8 @@ td:first-child { font-weight: 750; }
             <div class="app-card hero"><div class="row"><div style="font-size:27px">▦</div><div class="grow"><div class="ct">4 个工具已就绪</div><div class="cd">4 个主页组件</div></div></div></div>
             <div class="section-title"><div><strong>主页小部件</strong><small>长按调整大小或移除 · 长按拖动排序</small></div><span class="section-action">添加 1</span></div>
             <div class="widget-grid">
-              <div class="widget c2"><span class="label">SHIZUKU</span><span class="value">已连接</span><span class="hint">UID 2000</span></div>
-              <div class="widget c2"><span class="label">无障碍授权</span><span class="value">3 个收藏</span><span class="hint">自动启用 · 开启</span></div>
+              <div class="widget provider c2"><span class="label">SHIZUKU</span><span class="value">已连接</span><span class="hint">UID 2000</span></div>
+              <div class="widget c2"><span class="label">无障碍服务</span><span class="value">37 个服务</span><span class="hint">1 个已启用</span></div>
               <div class="widget c2"><span class="label">PHIGROS</span><span class="value">16.4231</span><span class="hint">1024 条成绩</span></div>
               <div class="widget c2"><span class="label">抽卡分析</span><span class="value">72 抽</span><span class="hint">距保底 18 抽</span></div>
             </div>
@@ -613,8 +614,8 @@ td:first-child { font-weight: 750; }
           <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
           <div class="phone-content"><div class="phone-scroll">
             <p class="screen-copy">点击打开 · 长按拖动排序或调整</p>
-            <div class="app-card"><div class="row top"><div class="icon-box">🛡</div><div class="grow"><div class="row"><div class="ct grow">Shizuku 授权</div><span class="meta">v1.5.1</span></div><div class="cd">为需要系统能力的插件建立受控连接</div></div></div></div>
-            <div class="app-card"><div class="row top"><div class="icon-box">♿</div><div class="grow"><div class="row"><div class="ct grow">无障碍授权</div><span class="meta">v1.3.1</span></div><div class="cd">通过 Shizuku 管理设备上的无障碍服务</div></div></div></div>
+            <div class="app-card"><div class="row top"><div class="icon-box">🛡</div><div class="grow"><div class="row"><div class="ct grow">Shizuku 授权</div><span class="meta">v1.0.0</span></div><div class="cd">连接 Shizuku，让工具在你允许后使用系统功能</div></div></div></div>
+            <div class="app-card"><div class="row top"><div class="icon-box">♿</div><div class="grow"><div class="row"><div class="ct grow">无障碍授权</div><span class="meta">v2.0.0</span></div><div class="cd">查看、启用或停用设备上的无障碍服务</div></div></div></div>
             <div class="app-card"><div class="row top"><div class="icon-box">♫</div><div class="grow"><div class="row"><div class="ct grow">Phigros Data Studio</div><span class="meta">v2.2.1</span></div><div class="cd">本地优先的云存档分析与制图</div></div></div></div>
             <div class="app-card"><div class="row top"><div class="icon-box">✦</div><div class="grow"><div class="row"><div class="ct grow">抽卡分析</div><span class="meta">v1.6.1</span></div><div class="cd">原神与星穹铁道抽卡记录分析</div></div></div></div>
             <div class="row" style="margin-top:10px"><span class="meta grow">1 个工具已隐藏</span><span class="section-action">在管理中恢复</span></div>
@@ -629,12 +630,11 @@ td:first-child { font-weight: 750; }
           <div class="statusbar"><span>14:32</span><span>◍ ▲ ▮</span></div>
           <div class="phone-content"><div class="phone-scroll">
             <p class="screen-copy">控制插件是否启用，以及在哪里显示。</p>
-            <div class="section-title"><div><strong>系统工具</strong></div></div>
-            <div class="app-card" style="padding:13px"><div class="row"><div class="icon-box dense">🛡</div><div class="grow"><div class="ct">Shizuku 授权</div><div class="cd">v1.5.1 · 工具页 · 主页</div></div><div class="switch on"></div><div class="chev">⌄</div></div></div>
-            <div class="section-title"><div><strong>已安装插件</strong><small>3 个</small></div></div>
-            <div class="app-card outlined" style="padding:13px"><div class="row"><div class="icon-box dense">♫</div><div class="grow"><div class="ct">Phigros Data Studio</div><div class="cd">v2.3.0 · 工具页 · 主页</div></div><div class="switch on"></div><div class="chev">⌃</div></div><div class="divider"></div><div class="subrow"><span class="grow">在工具页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">在主页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">检查更新</span><div class="switch on"></div></div><div class="button-row"><button class="btn outline flex">导出插件</button><button class="btn outline flex">删除插件</button></div><div class="button-row"><button class="btn outline flex">导出数据</button><button class="btn outline flex">导入数据</button><button class="btn outline flex">清除数据</button></div></div>
+            <div class="section-title"><div><strong>已安装插件</strong><small>4 个</small></div></div>
+            <div class="app-card outlined" style="padding:13px"><div class="row"><div class="icon-box dense">🛡</div><div class="grow"><div class="ct">Shizuku 授权</div><div class="cd">v1.0.0 · 工具页 · 主页 · 完全信任</div></div><div class="switch on"></div><div class="chev">⌃</div></div><div class="divider"></div><div class="subrow"><span class="grow">在工具页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">在主页显示</span><div class="switch on"></div></div><div class="notice warning">此插件可以直接使用本应用拥有的系统权限，无法逐项限制；其他插件使用它提供的系统功能时仍需单独获得允许。</div></div>
+            <div class="app-card outlined" style="padding:13px"><div class="row"><div class="icon-box dense">♫</div><div class="grow"><div class="ct">Phigros Data Studio</div><div class="cd">v2.3.0 · 工具页 · 主页</div></div><div class="switch on"></div><div class="chev">⌃</div></div><div class="divider"></div><div class="subrow"><span class="grow">在工具页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">在主页显示</span><div class="switch on"></div></div><div class="subrow"><span class="grow">检查更新</span><div class="switch on"></div></div><div class="divider"></div><div class="cd">插件权限</div><div class="subrow"><span class="grow">网络访问<br><small class="meta">仅声明的域名 · 需授权</small></span><div class="switch on"></div></div><div class="button-row"><button class="btn outline flex">导出插件</button><button class="btn outline flex">删除插件</button></div><div class="button-row"><button class="btn outline flex">导出数据</button><button class="btn outline flex">导入数据</button><button class="btn outline flex">清除数据</button></div></div>
             <div class="app-card" style="padding:13px"><div class="row"><div class="icon-box dense">✦</div><div class="grow"><div class="ct">抽卡分析</div><div class="cd">v1.6.1 · 仅工具页 · 不检查更新</div></div><div class="switch on"></div><div class="chev">⌄</div></div></div>
-            <div class="app-card dim" style="padding:13px"><div class="row"><div class="icon-box dense">♿</div><div class="grow"><div class="ct">无障碍授权</div><div class="cd">v1.3.1 · 已停用</div></div><div class="switch"></div><div class="chev">⌄</div></div></div>
+            <div class="app-card dim" style="padding:13px"><div class="row"><div class="icon-box dense">♿</div><div class="grow"><div class="ct">无障碍授权</div><div class="cd">v2.0.0 · 已停用</div></div><div class="switch"></div><div class="chev">⌄</div></div></div>
           </div></div>
           <div class="nav"><div class="nav-item"><span class="nav-icon">⌂</span>主页</div><div class="nav-item"><span class="nav-icon">▦</span>工具</div><div class="nav-item active"><span class="nav-icon">☷</span>管理</div><div class="nav-item"><span class="nav-icon">▣</span>仓库<span class="nav-badge">2</span></div><div class="nav-item"><span class="nav-icon">⚙</span>设置</div></div>
         </div></div>

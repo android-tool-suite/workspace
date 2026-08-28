@@ -17,6 +17,9 @@ android-tool-suite/
 ├─ app/                            主体应用仓库
 │  ├─ app/                        Android 宿主应用
 │  ├─ plugin-sdk/                 插件 API、模型与共享 Compose UI
+│  ├─ runtime-contract/            V3 清单、RPC、声明式 UI 与 Capability 契约
+│  ├─ trusted-shizuku-provider/     全信任 Shizuku 原生载荷模块
+│  ├─ examples/runtime-v2/         Tool 与合并 Shizuku 插件包定义
 │  ├─ docs/                       插件包格式与 ADB 调试文档
 │  ├─ tools/adb-debug.ps1         Debug APK 的 ADB 操作封装
 │  └─ artifacts/                  android-tool-suite-debug.apk
@@ -46,11 +49,11 @@ android-tool-suite/
 
 ## 架构边界
 
-- `app/app` 负责宿主界面、插件安装与运行时、Shizuku UserService、内置 `shizuku_auth` 插件及 Debug ADB Receiver。
+- `app/app` 负责宿主界面、插件安装与运行时、Capability 权限、Shizuku 最小 bootstrap 及 Debug ADB Receiver。`shizuku_auth` 是合并授权 UI 与 Native Provider 的独立 format v3 包，不在内置插件注册表中。
 - `app/plugin-sdk` 是宿主与外部插件之间的公开边界。插件 API、清单模型、主页组件协议和共享设计系统应放在这里，不要让外部插件直接依赖主体工程源码。
 - 每个外部插件都是独立 Android 应用工程，只通过 Maven 坐标 `com.androidtoolsuite:plugin-sdk` 编译，不得添加指向 `app` 的 Gradle project 依赖。
-- `.atsplugin` 必须包含 `manifest.json` 和重命名为 `plugin.apk` 的 APK；清单必须声明可执行的 `plugin.entryClass`。继续使用现有的 `generatePluginManifest`、`packagePlugin` 和 `collectArtifacts` 任务打包，不要手工拼装发布包。
-- 外部插件与宿主同进程运行。不要把插件级开关当作安全沙箱；只加载可信代码，不记录或展示 SessionToken、Shizuku 敏感输出等凭据。
+- format v3 普通插件使用统一声明式 UI（若有 UI），文档可选择 Host 或 WebView renderer；也可通过必需的受限 Worker 提供 Capability，但不得声明或夹带原生 Provider。只有必须以宿主身份与系统交互的实现使用签名的 `trusted-provider`；该类型仍可贡献 UI、Tool、主页组件和 Worker。旧 format v1/v2 才包含 `plugin.apk`；继续使用各仓库现有生成与打包任务，不要手工拼装发布包。
+- 普通 format v3 Tool 的能力调用必须经过 Capability Router，未授权调用应被真正拒绝；API1 与 `trusted-provider` 是同进程可信代码，不要把插件级开关描述成对它们的安全沙箱。不得记录或展示 SessionToken、Shizuku 敏感输出等凭据。
 
 ## 开发环境与构建
 
@@ -62,7 +65,7 @@ android-tool-suite/
 .\tools\build-all.ps1
 ```
 
-该脚本构建主体、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，同时运行插件索引生成器测试，最后把四个产物、`SHA256SUMS.txt` 和带五个子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
+该脚本构建主体、签名打包合并 UI 与底层能力的 Shizuku 插件、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，同时运行插件索引生成器测试，最后把五个产物、`SHA256SUMS.txt` 和带五个子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
 
 主体应用：
 
@@ -102,6 +105,7 @@ gradle -p plugins\gacha-analysis `
 正式本地产物分别位于：
 
 - `app/artifacts/android-tool-suite-debug.apk`
+- `app/artifacts/shizuku-auth.atsplugin`
 - `plugins/accessibility-grant/artifacts/accessibility-grant.atsplugin`
 - `plugins/phigros-advisor/artifacts/phigros-advisor.atsplugin`
 - `plugins/gacha-analysis/artifacts/gacha-analysis.atsplugin`
@@ -159,7 +163,7 @@ adb logcat "--pid=$appPid"
 
 修改完成并通过虚拟机测试后，必须运行 `adb devices -l` 检查实体设备。序列号通常为 `emulator-*` 的是模拟器，不要误判为实体设备；对已连接且状态为 `device` 的实体设备安装本次最新构建产物：
 
-优先使用外层安装工具，它会自动选择唯一实体设备，或通过 `-Serial` 指定设备，并按主体在前、插件在后的顺序使用集中产物：
+优先使用外层安装工具，它会自动选择唯一实体设备，或通过 `-Serial` 指定设备，并按主体、合并 Shizuku 插件、其他插件的顺序使用集中产物：
 
 ```powershell
 .\tools\install-latest.ps1
@@ -173,6 +177,9 @@ adb logcat "--pid=$appPid"
 adb -s <实体设备序列号> install -r -t .\app\artifacts\android-tool-suite-debug.apk
 
 # 对应插件发生变化时，通过宿主 Debug 入口导入最新插件包
+.\app\tools\adb-debug.ps1 -Serial <实体设备序列号> `
+  -Command import-plugin `
+  -PluginFile .\app\artifacts\shizuku-auth.atsplugin
 .\app\tools\adb-debug.ps1 -Serial <实体设备序列号> `
   -Command import-plugin `
   -PluginFile .\plugins\accessibility-grant\artifacts\accessibility-grant.atsplugin

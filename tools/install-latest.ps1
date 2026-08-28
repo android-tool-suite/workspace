@@ -2,7 +2,7 @@
 param(
     [string]$Serial,
     [switch]$SkipApp,
-    [ValidateSet('all', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'none')]
+    [ValidateSet('all', 'shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'none')]
     [string]$Plugins = 'all'
 )
 
@@ -70,7 +70,7 @@ if (-not $SkipApp) {
 }
 
 $pluginNames = switch ($Plugins) {
-    'all' { @('accessibility-grant', 'phigros-advisor', 'gacha-analysis') }
+    'all' { @('shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis') }
     'none' { @() }
     default { @($Plugins) }
 }
@@ -79,10 +79,12 @@ foreach ($pluginName in $pluginNames) {
     if (-not (Test-Path -LiteralPath $pluginFile)) {
         throw "找不到插件产物：$pluginFile。请先运行 .\tools\build-all.ps1。"
     }
-    & $debugTool -Serial $Serial -Command import-plugin -PluginFile $pluginFile
+    # 集成工作区会在一个正式 versionCode 内反复产出 Debug 包；显式走 Debug-only
+    # 同版本原子替换，避免为了设备复核占用发布版本号或先删除插件数据。
+    & $debugTool -Serial $Serial -Command import-plugin -PluginFile $pluginFile -ReplaceSameVersion
     if ($LASTEXITCODE -ne 0) {
         throw "插件导入失败：$pluginName"
     }
 }
 
-Write-Host "最新产物已安装到实体设备 $Serial，请进行真机手动验收。" -ForegroundColor Green
+Write-Host "最新产物已安装到目标设备 $Serial。若这是实体设备，请继续进行真机手动验收。" -ForegroundColor Green

@@ -1,26 +1,29 @@
 # Android Tool Suite 插件运行时重构计划
 
-状态：方向基线
-更新日期：2026-08-20
+状态：已接受的实施基线
+更新日期：2026-08-28
 实施范围：Android-first；本计划不实现 iOS、Desktop 或其他平台宿主
 
 ## 1. 决策摘要
 
 Android Tool Suite（ATS）的长期定位是：
 
-> Android 上的单应用个人工具平台。普通工具以 Web 技术开发，通过一小套 ATS Capability API 使用数据、后台任务和 Android 系统能力；需要直接接触平台 API 的能力由 Native Provider 提供。
+> Android 上的单应用个人工具平台。所有工具使用统一声明式 UI；简单页面选择宿主组件树 renderer，复杂页面选择隔离 WebView renderer。普通插件只能通过用户可管理的 ATS Capability API 使用数据、后台任务和 Android 系统能力；需要直接接触平台 API 的插件升级为签名、全信任的 `trusted-provider`，但仍可拥有 UI、Tool、主页组件和 Worker。
 
 本轮方向不再继续现有的“Host APK + 通用 Sandbox APK + 远程 Compose/Surface”原型。该原型已完整保存在各仓库本地分支 `codex/runtime-v2-sandbox-archive`，作为实验记录和可复用语义的来源，不作为后续主线实现。
 
 主线采用三层开发模型：
 
-1. Web Tool：静态 HTML/CSS/JavaScript 即可运行，不要求 ATS 专有 API。
-2. ATS Tool：Web UI + 薄 JS SDK，可选 WASM，按需调用 Capability、存储和后台任务。
-3. Native Provider：使用 Kotlin/Android 实现平台能力，面向高级开发者；Shizuku 属于 Provider，而不是宿主隐藏特权入口。
+1. ATS Tool：统一 `ui/*.json` 入口；受限组件树由 Host 渲染，或由 `webview` 根节点选择静态 Web UI renderer，可按需增加薄 JS SDK／WASM。
+2. Trusted Provider：使用 Kotlin/Android 实现需要宿主身份的平台能力，启用即表示完全信任；它仍可贡献普通插件功能。Shizuku 只在宿主保留 Android 安装模型要求的最小 bootstrap。
 
 WASM 是可选能力，不是普通插件的入门门槛。当前只做 Android 运行时，但清单、RPC、数据和任务接口不得暴露 `Activity`、`Context`、`Intent`、Binder 等 Android 类型，以便未来在不重写插件协议的前提下增加其他平台实现。
 
 AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维护在 [ai-plugin-development-plan.md](ai-plugin-development-plan.md) 和 [publication-platform-plan.md](publication-platform-plan.md)，优先级均低于 Runtime v2。总体排序见 [product-roadmap.md](product-roadmap.md)。
+
+相似项目、插件系统、WebView、后台 JavaScript、WASM 与 DeepSeek Harness 的证据和取舍见
+[runtime-v2-research-report.md](runtime-v2-research-report.md)。调研只为决策提供证据；下面列出的 ADR
+才是实现约束。
 
 ## 2. 本轮目标与非目标
 
@@ -29,7 +32,9 @@ AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维
 - 普通插件开发退化为标准 Web 开发，加一个清单即可形成最小插件。
 - 插件只学习少量稳定的 ATS API，不学习宿主 Android 生命周期和 Compose 组件树。
 - UI 入口与后台入口分离；后台任务由宿主调度，不依赖常驻 WebView 或 `setInterval()`。
-- Android/Shizuku 等平台能力通过版本化、类型化 Provider 契约暴露。
+- 任何普通插件都可用受限 Worker 实现版本化 Capability；只有必须以宿主身份与 Android/Shizuku 交互的实现使用全信任底层 Provider。
+- 用户可以逐插件允许或撤销敏感 Capability；scope 扩大后必须重新决定，事件和后台任务使用同一权限状态。
+- Shizuku 能力实现和授权 UI 都不使用宿主内置 `ToolPlugin`：前者是签名 `trusted-provider`，后者是依赖它的普通 V3 Tool。
 - 插件数据按命名空间管理，支持备份、校验、迁移、回滚与未来运行时替换。
 - 保持用户只安装和打开一个 ATS App；Provider 和工具的安装细节不扩散到桌面体验。
 - 保留现有签名索引、Debug/Release 渠道、依赖、升级/降级和数据兼容治理。
@@ -38,7 +43,7 @@ AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维
 
 - 本计划不创建 iOS、Desktop、KMP 或 Compose Multiplatform 工程。
 - 不承诺“任意语言天然可用”；准确边界是能产出 Web 资源，或能编译到 ATS 支持的 WASM ABI。
-- 不把普通 Web 插件变成一个新的 UI 框架；Web 本身就是 UI SDK。
+- 不把声明式 UI 扩张成任意表达式或脚本框架；复杂交互直接使用 Web 平台。
 - 不在第一阶段开放不受信任的任意第三方原生代码。
 - 不向普通插件提供裸 `runShellCommand()`、Binder 句柄或任意文件路径。
 - 不以完成强安全沙盒为新运行时首个里程碑；先稳定协议与完整工具闭环。
@@ -51,11 +56,15 @@ AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维
 flowchart TD
     P[".atsplugin package"] --> R["Package verifier and registry"]
     R --> M["Manifest and dependency resolver"]
-    M --> UI["Web UI runtime"]
+    M --> DUI["Declarative UI runtime"]
+    DUI --> HUI["Host component renderer"]
+    DUI --> UI["WebView renderer"]
     M --> BG["Background task runtime"]
     UI --> RPC["Versioned ATS RPC"]
+    DUI --> RPC
     BG --> RPC
-    RPC --> C["Capability router"]
+    RPC --> PM["Plugin permission manager"]
+    PM --> C["Capability router"]
     RPC --> S["Namespaced storage"]
     RPC --> J["Host scheduler"]
     C --> HP["Host capabilities"]
@@ -66,23 +75,39 @@ flowchart TD
 
 宿主负责验证、生命周期、路由、调度、存储、更新和统一外壳，不承载插件业务逻辑。普通插件不知道底层使用 Android WebView、Kotlin、Binder 还是 Shizuku。
 
+V2 进一步采用 Definition / Provider / Consumer 服务缝：Capability Definition 是单一契约源，
+Provider 只实现 Definition，Consumer 只依赖 Definition。Provider 可以是普通插件的受限 Worker，也可以是需要宿主身份的 `trusted-provider`。插件贡献的 UI、Provider、任务、事件和订阅
+注册都返回可撤销 effect；停用或升级时先静默化任务，再按逆序撤销，不能只依赖插件自行清理。
+
+安装与运行分别生成依赖图：安装图用于 fail-fast 校验 ID、版本、Capability 和 Dataset 依赖；运行图
+记录当前 Provider generation、health 与降级原因。图可在 Debug 诊断中导出，Release UI 只展示用户
+可理解的状态和处理办法。
+
 ## 4. 插件形态
 
-### 4.1 Web Tool
+### 4.1 Host-rendered Tool
+
+最小包使用 `ui/*.json` 描述页面、状态 Query 和按钮 Action。宿主只渲染规范允许的分段、卡片、
+文本、指标、状态、提示、按钮与状态页；不存在任意表达式、HTML 或插件代码执行。声明式页面与主页
+组件直接复用 Compose token、深浅主题、无障碍语义和响应式边界，完整规则见
+[ADR-0008](adr/0008-web-and-declarative-ui.md)。
+
+### 4.2 WebView-rendered Tool
 
 最小包只需：
 
 ```text
 manifest.json
+ui/main.json
 web/index.html
 web/assets/...
 ```
 
 不调用 ATS API 的离线计算器、格式化器、可视化工具可以直接运行。React、Vue、Svelte、原生 Web 等均由插件自行选择，ATS 只消费构建后的静态资源。
 
-### 4.2 ATS Tool
+### 4.3 ATS Tool 能力扩展
 
-在 Web Tool 基础上按需增加：
+在任一声明式 renderer 基础上按需增加：
 
 - `@android-tool-suite/sdk`：薄 TypeScript/JavaScript 客户端；
 - `worker.wasm`：可选的计算或后台入口；
@@ -92,7 +117,7 @@ web/assets/...
 
 复杂度随需求增加。Hello World 插件不需要理解 Provider、WASM、后台调度或 Android 构建。
 
-### 4.3 Native Provider
+### 4.4 Trusted Provider
 
 Native Provider 用于无法由 Web/WASM 直接实现的 Android 能力，例如：
 
@@ -102,7 +127,16 @@ Native Provider 用于无法由 Web/WASM 直接实现的 Android 能力，例如
 - 文件选择、通知和系统 Intent；
 - Shizuku 连接与受控命令实现。
 
-Provider 是显式插件类型，遵循与其他插件相同的 ID、版本、签名、依赖和发布规则；Shizuku 不获得隐藏的“官方插件”旁路。Provider 因接触平台 API 而属于受信任计算基的一部分，只有受信来源可以安装或升级。
+需要宿主身份的底层 Provider 使用显式 `trusted-provider` 包类型，遵循与其他插件相同的 ID、版本、依赖、generation 和发布规则；Shizuku 不获得隐藏的内置插件旁路。它可以同时贡献普通 Tool/UI/Worker，但整包因原生代码接触平台 API 而属于受信任计算基，只有受信签名来源可以安装或升级，启用界面必须明确说明完全信任后果。
+
+普通插件同样可以提供 Capability：清单把 `provides.capabilities[].workerEntry` 指向必需的 JavaScript Worker，列出稳定版本和方法集合。调用时临时创建受限 isolate，输入只含结构化 payload、消费者 scope 与手势元数据；Worker 的下游 Capability 调用以提供者插件自身身份重新授权，不获得 `Context`、Binder、Shizuku、宿主类或物理路径。
+
+“相同规则”不等于“相同风险”：Web-only 本地包可以经风险提示导入；包含 Native Provider 的包必须
+具有包内 publisher 签名且 publisher 位于信任根。随宿主编译的最小 Shizuku bootstrap 仅负责
+manifest、UserService 类和 Binder 生命周期，本身不注册业务 Capability；单个 `shizuku_auth`
+全信任包通过 bridge 注册窄 Capability，并同时贡献授权 UI。普通
+Tool 不得直接调用实现类或旧 `PluginHost` shell 方法。完整规则
+见 [ADR-0003](adr/0003-native-provider-loading-and-trust.md)。
 
 工具应依赖业务能力，例如 `accessibility.manage`，而不是依赖具体的 `shizuku.shell`。这样未来可由 Shizuku、Root、ADB 或平台原生实现提供同一契约。
 
@@ -175,6 +209,11 @@ lastRun(taskId)
 - 网络请求默认通过 Capability API；WebView 自身的任意远程导航不作为正式插件能力。
 - CSP、资源大小、启动超时、内存和消息大小限制属于运行时可靠性约束，即使插件来源可信也保留。
 
+Android 使用每插件独立的 HTTPS 虚拟源与 `WebViewCompat.addWebMessageListener` 精确来源白名单；
+DOM Storage 默认关闭，持久数据只走 ATS Storage。虚拟源、基线 CSP、导航、renderer 终止与熔断规则
+见 [ADR-0001](adr/0001-web-origin-csp-and-network.md)。RPC 握手、256 KiB 消息上限、取消、blob/cursor
+和兼容规则见 [ADR-0002](adr/0002-rpc-envelope-and-versioning.md)。
+
 ### 6.2 主题与宿主外壳
 
 ATS 向 Web UI 注入少量设计 token、主题状态和宿主容器尺寸，不规定 React/Vue 等框架。宿主继续负责应用级导航、插件标题、更新状态、错误外壳和无障碍最低要求；插件负责领域内容。
@@ -199,7 +238,12 @@ UI WebView 不常驻后台。每个后台入口是可恢复、可超时、可重
 trigger -> host scheduler -> worker entry -> capability/storage -> result
 ```
 
-首版可以只支持 JavaScript worker 或受限的宿主任务协议；WASM worker 在 ABI、冷启动、内存和中断语义验证后加入。长期 ABI 可采用 WIT 风格描述并生成多语言绑定，但不在第一阶段绑定某个 WASM 引擎。
+首版同时支持 API 24+ 的 `provider-task` 和 API 26+、设备能力允许时的
+`javascript-worker`。JavaScript worker 使用 AndroidX JavaScriptEngine 独立进程，持久调度使用
+WorkManager；不支持的设备按 manifest 的 required/optional 语义拒绝或降级。WASM worker 在 ABI、
+冷启动、内存和中断语义验证后加入。后台规则见
+[ADR-0004](adr/0004-background-runtime.md)，WASM/WIT 边界见
+[ADR-0005](adr/0005-wasm-and-wit-boundary.md)。
 
 适用任务包括：
 
@@ -238,30 +282,38 @@ notification.post
 
 ### 8.3 授权含义
 
-当前生态仍以可信插件为前提。Capability 声明首先用于接口治理、可见性和用户意图，不宣传为同进程下的强安全沙箱。将来若引入不可信代码或独立 UID Backend，同一声明可升级为真正的强制边界。
+普通 format v3 Tool 不允许携带原生代码，它的 Host Action、WebView RPC、Worker、事件与后台任务都只能经过 Capability Router；Router 在执行 Provider 前检查清单、scope 与当前授权，因此未授权能力是强制阻断边界。`trusted-provider` 与 API1 兼容插件仍是同进程可信代码，Capability 权限不限制它们自身；这两类风险必须分开描述。
 
 ## 9. 包格式草案
 
-下面只表达目标结构，不直接作为可发布 schema：
+下面表达已冻结 schema 的信息结构；字段细节以阶段 1 交付的 `manifest-v3.schema.json` 为准：
 
 ```json
 {
   "format": "ats-plugin",
   "formatVersion": 3,
-  "id": "com.example.text-tool",
-  "version": "1.0.0",
+  "plugin": {
+    "id": "com.example.text-tool",
+    "version": "1.0.0",
+    "versionCode": 1,
+    "publisher": "com.example",
+    "kind": "tool"
+  },
   "platforms": ["android"],
   "runtime": {
-    "ui": [{ "id": "main", "type": "web", "entry": "web/index.html" }],
+    "ui": [{ "id": "main", "type": "declarative", "entry": "ui/main.json" }],
     "background": []
   },
-  "requires": [],
-  "provides": [],
-  "datasets": []
+  "requires": { "capabilities": [], "plugins": [] },
+  "provides": { "capabilities": [] },
+  "datasets": [],
+  "tasks": []
 }
 ```
 
-Provider 包使用同一外层模型，只在 `provides` 与平台实现入口中增加受信原生载荷。正式 schema 必须单独版本化，并配套规范化 JSON、签名覆盖范围、路径规则、大小上限、重复文件检测和兼容性测试。
+Provider 包使用同一外层模型，但必须声明 `kind: trusted-provider`，并在 `provides` 与 `runtime.providers` 中增加受信原生载荷；它仍可贡献 UI、Tool、主页组件、Worker 与任务。正式 schema
+单独版本化，并配套规范化 JSON、签名覆盖范围、路径规则、大小上限、重复文件检测和兼容性测试。
+manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源生成，不分别手写漂移的模型。
 
 ## 10. 数据、备份与迁移
 
@@ -273,6 +325,9 @@ Provider 包使用同一外层模型，只在 `provides` 与平台实现入口�
 - 导入先写 staging generation，完成结构、摘要和业务校验后原子切换。
 - 升级/降级根据可读写数据版本判断，不只比较插件版本号。
 - 空环境恢复是备份有效性的最终证明。
+
+V2 物理布局、SQLite/blob 配额、Keystore/AES-GCM、staging generation 和 active 指针原子切换已由
+[ADR-0006](adr/0006-storage-secret-and-generation.md) 固定。
 
 ### 10.2 Migration Bridge
 
@@ -325,27 +380,43 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 
 ### 阶段 1：协议与包格式最小闭环
 
+实现状态（2026-08-24）：已完成。format v3 schema、Java/TypeScript 生成绑定、确定性 CLI、
+完整性／签名校验和离线 Web Tool 示例均已进入宿主仓库并通过契约测试。
+
 交付物：
 
 - `manifest-v3.schema.json` 与规范文档；
 - RPC envelope、错误模型、版本协商和 TypeScript 类型；
 - 打包、规范化、签名和离线校验 CLI；
 - 一个不使用 ATS API 的 Web Tool 示例。
+- Kotlin/TypeScript/schema 共用 fixture 的契约生成与兼容测试。
 
-退出条件：静态网页项目能被打包、签名、安装、打开和卸载；损坏包及路径穿越被拒绝。
+退出条件：静态网页项目能被打包、签名、安装、打开和卸载；损坏包、重复项及路径穿越被拒绝；
+manifest、Kotlin 与 TypeScript fixture 不产生差异。
 
 ### 阶段 2：Web Tool Runtime
+
+实现状态（2026-08-27）：WebView 已收敛为声明式 UI 的一种 renderer。新 Tool 统一使用 `ui/*.json`
+入口；`column` 由 Host 渲染，`webview` 使用每插件 HTTPS 虚拟源承载复杂 Web UI。两者共享
+Capability、权限、主题、加载／空／错误外壳和主页组件；旧 `type: web` 仅保留读取兼容。
 
 交付物：
 
 - Android Web UI Backend；
+- Host-rendered Declarative UI Backend；
 - 主题、返回、生命周期、错误外壳和资源限制；
 - JS SDK 的 `app`、`storage` 和基础事件；
 - 一个现有低风险工具的端到端迁移。
 
-退出条件：新工具不依赖 Android SDK/Gradle 即可开发；冷启动、旋转、后台恢复和崩溃隔离达到基线。
+退出条件：声明式与 Web 新工具都不依赖 Android SDK/Gradle 即可开发；冷启动、旋转、后台恢复和崩溃隔离达到基线。
 
 ### 阶段 3：Capability 与 Native Provider
+
+实现状态（2026-08-27）：宿主能力路由、版本解析、health/backoff、签名 `trusted-provider` 冷启动
+装载与全信任包约束已完成。`shizuku.control` 和 `accessibility.manage` 已从宿主内置 Provider
+迁移到合并 UI 与底层实现的 `shizuku_auth`；宿主只保留最小 bridge。Capability 权限已覆盖默认待决定、scope 指纹、
+管理 UI、调用／事件检查、在途取消、后台停调度和有限审计；普通 Tool 夹带原生载荷会被打包端和安装端拒绝。正式 Provider 发布仍必须使用
+CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验收。
 
 交付物：
 
@@ -353,10 +424,15 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 - 网络、文件、剪贴板等 Host Capability；
 - Shizuku Provider 与首个高层能力 `accessibility.manage`；
 - 调用追踪、超时和结构化错误，但不记录敏感载荷。
+- 按插件的 Capability 权限、撤销和范围变化重新确认。
 
 退出条件：无障碍工具不再调用 Host shell API；替换 Provider 不需要修改 Tool。
 
 ### 阶段 4：后台任务与可选 WASM
+
+实现状态（2026-08-24）：WorkManager 调度、provider-task、JavaScriptSandbox worker、手动／周期／
+约束／前台／Provider 事件、超时、重试、并发租约、历史与事件已完成；无隐藏 WebView。WASM 继续
+按 ADR-0005 保持可选候选，不因未通过体积与中断性实测而伪装为已交付 Backend。
 
 交付物：
 
@@ -370,6 +446,11 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 
 ### 阶段 5：数据运行时与工具迁移
 
+实现状态（2026-08-26）：框架部分已完成 KV/blob、Keystore AES-GCM SecretStore、chunked Dataset、staging generation、
+原子切换／回滚和 `.atsbackup` v3 adapter 已完成；无障碍授权完成首个单向迁移纵切。Phigros 与抽卡
+分析按用户当前优先级暂缓业务迁移，继续使用冻结的 API1 Dataset adapter；后续按 1.9 发布窗逐个完成业务等价迁移，不能在没有空环境
+恢复和降级证据时仅改包格式冒充迁移完成。
+
 交付物：
 
 - StorageService、SecretStore、Dataset staging/rollback；
@@ -380,6 +461,10 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 退出条件：每个迁移工具都通过旧数据导出、新环境恢复、业务校验和降级演练。
 
 ### 阶段 6：开发体验与旧运行时退役
+
+实现状态（2026-08-24）：`ats create`、`ats dev`、Capability mock、自动刷新、Android Debug 同源代理、
+契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达 ADR-0007 的两个稳定版本／90 天硬门槛，
+因此当前正确状态是冻结而非提前删除。
 
 交付物：
 
@@ -393,25 +478,33 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 ## 13. 全局验收门槛
 
 - 架构：普通 Tool 不引用 Android/Kotlin/Compose 类型。
-- 易用性：最小插件只需静态 Web 资源与清单。
-- 能力：Tool 只依赖 capability ID 和 schema，不依赖 Shizuku 实现。
+- 易用性：最小 WebView 工具只需 `ui/main.json`、静态 Web 资源与清单；服务型普通插件只需 Worker、清单和能力契约。
+- 能力：普通插件可消费或通过受限 Worker 提供 capability；Consumer 只依赖 capability ID 和 schema，不依赖 Shizuku 或其他具体实现。
+- 权限：用户可逐插件查看、允许和撤销敏感 Capability；扩大 scope 不继承旧授权，后台与事件不能绕过检查。
+- UI：所有新 Tool 只有一个声明式入口；简单页面使用 Host renderer，复杂页面使用隔离 WebView renderer，两者共享设计 token 和状态语义。
+- Shizuku：授权 Tool 与能力 Provider 都不在内置注册表中；最小宿主 bridge 只对签名全信任 Provider 开放，不向普通 Tool 暴露通用 Shell。
 - 后台：没有通过常驻 WebView 模拟后台任务的实现。
 - 数据：敏感 Dataset 默认受保护，显式明文必须二次确认；导入支持 staging、校验和回滚。
 - 发布：组件仓库分别测试、构建和发布，外层只锁定已验证组合。
 - 兼容：现有 API1 正式版在迁移完成前持续可用。
 - 平台：当前产物只有 Android；公共协议中没有 Android 类和物理路径。
-- 安全表述：可信插件模型、可靠性隔离和强安全边界的能力不混为一谈。
+- 安全表述：普通 V3 Tool 的未授权能力是 Router 强制边界；API1／trusted-provider 是全信任原生代码，不能混为一谈。
 
 ## 14. 在编码前必须冻结的决策
 
-阶段 1 开始前，用独立 ADR 固定以下内容：
+阶段 1 的前置决策已经在 2026-08-21 冻结：
 
-1. Web 资源虚拟源、CSP 与远程网络策略；
-2. RPC envelope、请求取消、流式数据和版本协商；
-3. Provider 原生载荷的 Android 安装/加载方式及信任根；
-4. 后台首版选择 JavaScript worker 还是只提供声明式宿主任务；
-5. WASM 引擎评估指标与 WIT 子集，不预先绑定实现；
-6. Dataset 物理存储、SecretStore、备份密钥和 staging 原子切换；
-7. API1 到新运行时的退出版本、回滚窗口和 Release Bridge 发布顺序。
+1. [ADR-0001：Web 虚拟源、CSP 与网络边界](adr/0001-web-origin-csp-and-network.md)；
+2. [ADR-0002：RPC envelope、取消、数据流与版本协商](adr/0002-rpc-envelope-and-versioning.md)；
+3. [ADR-0003：Native Provider 载荷、装载与信任根](adr/0003-native-provider-loading-and-trust.md)；
+4. [ADR-0004：后台任务首版执行器](adr/0004-background-runtime.md)；
+5. [ADR-0005：WASM 引擎评估与 WIT 子集](adr/0005-wasm-and-wit-boundary.md)；
+6. [ADR-0006：Dataset 存储、SecretStore 与 generation 切换](adr/0006-storage-secret-and-generation.md)；
+7. [ADR-0007：API1 退出、回滚窗口与发布顺序](adr/0007-api1-exit-and-release-order.md)；
+8. [ADR-0008：统一声明式 UI 与可选 WebView Renderer](adr/0008-web-and-declarative-ui.md)；
+9. [ADR-0009：插件 Capability 权限生命周期](adr/0009-plugin-permission-lifecycle.md)；
+10. [ADR-0010：Shizuku 授权与底层能力合并外置](adr/0010-external-shizuku-authorization-tool.md)。
 
-未冻结这些契约前，不再次并行开发 UI IPC、双 APK、权限面板和数据代管，以免重复形成一套由实现倒推出来的公共 API。
+后续实现若发现设备证据与 ADR 冲突，必须在同一变更中先修订 ADR、说明迁移影响并更新契约
+fixture；不得只让 Kotlin/TypeScript 实现偏离文档。API1 退出按 ADR-0007 的双稳定版本和 90 天窗口
+执行，不能因为新运行时已能启动就提前删除旧数据路径。

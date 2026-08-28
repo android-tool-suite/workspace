@@ -3,7 +3,8 @@ param(
     [switch]$NoClean,
     [switch]$SkipTests,
     [string]$GradleExecutable = 'gradle',
-    [string]$PythonExecutable = 'python'
+    [string]$PythonExecutable = 'python',
+    [string]$ProviderSigningKey
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,6 +16,11 @@ $registryRoot = Join-Path $workspaceRoot 'plugin-registry'
 $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
 $gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
+$shizukuProject = Join-Path $appRoot 'examples\runtime-v2\shizuku-auth'
+$shizukuArtifact = Join-Path $appRoot 'artifacts\shizuku-auth.atsplugin'
+$shizukuProviderModule = Join-Path $appRoot 'trusted-shizuku-provider'
+$shizukuPackageProject = Join-Path $appRoot 'build\runtime-v2\shizuku-auth-package'
+$providerPublicKey = Join-Path $registryRoot 'registry-public.pem'
 $sdkRepository = Join-Path $appRoot 'plugin-sdk\build\repository'
 $stagingDirectory = Join-Path $workspaceRoot 'temp\build-all-staging'
 $outputDirectory = Join-Path $workspaceRoot 'artifacts'
@@ -26,7 +32,10 @@ function Assert-WorkspaceLayout {
         (Join-Path $registryRoot 'tests\test_build_registry.py'),
         (Join-Path $accessibilityRoot 'settings.gradle'),
         (Join-Path $phigrosRoot 'settings.gradle'),
-        (Join-Path $gachaRoot 'settings.gradle')
+        (Join-Path $gachaRoot 'settings.gradle'),
+        (Join-Path $shizukuProject 'manifest.json'),
+        (Join-Path $shizukuProviderModule 'build.gradle'),
+        $providerPublicKey
     )
     foreach ($path in $required) {
         if (-not (Test-Path -LiteralPath $path)) {
@@ -63,19 +72,37 @@ function Reset-SafeDirectory([string]$Path) {
     New-Item -ItemType Directory -Path $fullPath -Force | Out-Null
 }
 
-function Assert-PluginPackage([string]$Path) {
+function Assert-PluginPackage([string]$Path, [string]$PythonPath) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [IO.Compression.ZipFile]::OpenRead($Path)
     try {
         $names = @($archive.Entries | ForEach-Object { $_.FullName })
-        foreach ($requiredEntry in @('manifest.json', 'plugin.apk')) {
-            if ($requiredEntry -notin $names) {
-                throw "插件包缺少 $requiredEntry：$Path"
+        if ('manifest.json' -notin $names) { throw "插件包缺少 manifest.json：$Path" }
+        $manifestEntry = $archive.GetEntry('manifest.json')
+        $reader = [IO.StreamReader]::new($manifestEntry.Open(), [Text.Encoding]::UTF8)
+        try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
+        $formatVersion = [int]$manifest.formatVersion
+        if ($formatVersion -eq 3) {
+            if ('META-INF/ats-integrity.json' -notin $names) {
+                throw "format v3 插件包缺少完整性清单：$Path"
             }
+        }
+        elseif ($formatVersion -eq 2) {
+            if ('plugin.apk' -notin $names) { throw "format v2 插件包缺少 plugin.apk：$Path" }
+        }
+        else {
+            throw "插件包 formatVersion 不受支持：$formatVersion"
         }
     }
     finally {
         $archive.Dispose()
+    }
+    if ($formatVersion -eq 3) {
+        Invoke-Native $PythonPath @(
+            (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
+            'verify',
+            $Path
+        )
     }
 }
 
@@ -84,9 +111,9 @@ $gradle = Get-Command $GradleExecutable -ErrorAction SilentlyContinue
 if ($null -eq $gradle) {
     throw "找不到 Gradle：$GradleExecutable。请安装 Gradle 8.9+ 并加入 PATH。"
 }
-$python = if ($SkipTests) { $null } else { Get-Command $PythonExecutable -ErrorAction SilentlyContinue }
-if (-not $SkipTests -and $null -eq $python) {
-    throw "找不到 Python：$PythonExecutable。插件索引测试需要 Python 3。"
+$python = Get-Command $PythonExecutable -ErrorAction SilentlyContinue
+if ($null -eq $python) {
+    throw "找不到 Python：$PythonExecutable。Runtime v2 产物验证需要 Python 3。"
 }
 
 $buildTasks = if ($NoClean) { @('collectArtifacts') } else { @('clean', 'collectArtifacts') }
@@ -97,9 +124,66 @@ if (-not $SkipTests) {
         '-s', (Join-Path $registryRoot 'tests'),
         '-v'
     )
+    Invoke-Native $python.Source @(
+        '-m', 'unittest', 'discover',
+        '-s', (Join-Path $appRoot 'tools\runtime-v2\tests'),
+        '-v'
+    )
+    Invoke-Native $gradle.Source @(
+        '-p', $appRoot,
+        ':runtime-contract:testDebugUnitTest',
+        ':app:testDebugUnitTest'
+    )
 }
 
+if ([string]::IsNullOrWhiteSpace($ProviderSigningKey)) {
+    $ProviderSigningKey = [Environment]::GetEnvironmentVariable('ATS_PROVIDER_SIGNING_KEY')
+}
+if ([string]::IsNullOrWhiteSpace($ProviderSigningKey)) {
+    $localProperties = Join-Path $appRoot 'local.properties'
+    if (Test-Path -LiteralPath $localProperties) {
+        $keyLine = Get-Content -LiteralPath $localProperties |
+            Where-Object { $_ -like 'atsProviderSigningKey=*' } |
+            Select-Object -First 1
+        if ($keyLine) { $ProviderSigningKey = $keyLine.Substring('atsProviderSigningKey='.Length).Trim() }
+    }
+}
+if ([string]::IsNullOrWhiteSpace($ProviderSigningKey) -or -not (Test-Path -LiteralPath $ProviderSigningKey -PathType Leaf)) {
+    throw '缺少受信 Provider publisher 私钥。请设置 ATS_PROVIDER_SIGNING_KEY 或 app/local.properties 的 atsProviderSigningKey。'
+}
+$ProviderSigningKey = [IO.Path]::GetFullPath($ProviderSigningKey)
+
 Invoke-Native $gradle.Source (@('-p', $appRoot) + $buildTasks)
+Invoke-Native $gradle.Source @('-p', $appRoot, ':trusted-shizuku-provider:assembleDebug')
+
+Reset-SafeDirectory $shizukuPackageProject
+Copy-Item -LiteralPath (Join-Path $shizukuProject 'manifest.json') `
+    -Destination (Join-Path $shizukuPackageProject 'manifest.json')
+foreach ($payloadDirectory in @('ui', 'web', 'workers')) {
+    $source = Join-Path $shizukuProject $payloadDirectory
+    if (Test-Path -LiteralPath $source -PathType Container) {
+        Copy-Item -LiteralPath $source -Destination (Join-Path $shizukuPackageProject $payloadDirectory) -Recurse
+    }
+}
+$providerAndroidDirectory = Join-Path $shizukuPackageProject 'android'
+New-Item -ItemType Directory -Path $providerAndroidDirectory -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $shizukuProviderModule 'build\outputs\apk\debug\trusted-shizuku-provider-debug.apk') `
+    -Destination (Join-Path $providerAndroidDirectory 'provider.apk')
+Invoke-Native $python.Source @(
+    (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
+    'pack',
+    $shizukuPackageProject,
+    '--output', $shizukuArtifact,
+    '--signing-key', $ProviderSigningKey,
+    '--public-key', $providerPublicKey
+)
+Invoke-Native $python.Source @(
+    (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
+    'verify',
+    $shizukuArtifact,
+    '--public-key', $providerPublicKey,
+    '--require-signature'
+)
 Invoke-Native $gradle.Source @(
     '-p', $appRoot,
     ':plugin-sdk:publishReleasePublicationToPluginSdkRepository'
@@ -108,6 +192,9 @@ Invoke-Native $gradle.Source @(
 $sdkProperty = "-PatsSdkRepository=$sdkRepository"
 Invoke-Native $gradle.Source (@('-p', $accessibilityRoot, $sdkProperty) + $buildTasks)
 if (-not $SkipTests) {
+    Invoke-Native $gradle.Source @('-p', $accessibilityRoot, $sdkProperty, 'testDebugUnitTest')
+}
+if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $phigrosRoot, $sdkProperty, 'testDebugUnitTest')
 }
 Invoke-Native $gradle.Source (@('-p', $phigrosRoot, $sdkProperty) + $buildTasks)
@@ -115,11 +202,14 @@ if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $gachaRoot, $sdkProperty, 'testDebugUnitTest')
 }
 Invoke-Native $gradle.Source (@('-p', $gachaRoot, $sdkProperty) + $buildTasks)
-
 $artifacts = @(
     [pscustomobject]@{
         Name = 'android-tool-suite-debug.apk'
         Source = Join-Path $appRoot 'artifacts\android-tool-suite-debug.apk'
+    },
+    [pscustomobject]@{
+        Name = 'shizuku-auth.atsplugin'
+        Source = $shizukuArtifact
     },
     [pscustomobject]@{
         Name = 'accessibility-grant.atsplugin'
@@ -143,7 +233,7 @@ foreach ($artifact in $artifacts) {
     $destination = Join-Path $stagingDirectory $artifact.Name
     Copy-Item -LiteralPath $artifact.Source -Destination $destination -Force
     if ($artifact.Name.EndsWith('.atsplugin', [StringComparison]::OrdinalIgnoreCase)) {
-        Assert-PluginPackage $destination
+        Assert-PluginPackage $destination $python.Source
     }
 }
 
@@ -176,6 +266,11 @@ $manifest = [ordered]@{
         phigrosDebugUnitTest = -not $SkipTests
         gachaDebugUnitTest = -not $SkipTests
         registryGeneratorUnitTest = -not $SkipTests
+        runtimeV2CliUnitTest = -not $SkipTests
+        runtimeContractUnitTest = -not $SkipTests
+        hostDebugUnitTest = -not $SkipTests
+        accessibilityDebugUnitTest = -not $SkipTests
+        shizukuTrustedPluginPackage = $true
     }
     artifacts = @($manifestArtifacts)
 }
