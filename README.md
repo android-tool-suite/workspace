@@ -3,34 +3,34 @@
 此仓库是 Android Tool Suite 的**集成工作区**，使用 Git 子模块锁定一组经过验证的主体应用和插件版本：
 
 - `app`：主体应用与插件 SDK。
+- `plugins/shizuku-auth`：Shizuku 授权与全信任 Provider 插件。
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
 - `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
 - `plugin-registry`：应用与插件的正式/调试索引、历史目录、签名和 GitHub Pages 发布中心。
 
-五个子模块是彼此独立的权威源码仓库，分别维护提交和发布边界。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
+六个子模块是彼此独立的权威源码仓库，分别维护提交和发布边界。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
 
 只有以下场景需要使用本集成工作区：
 
-- 联调尚未发布的 `plugin-sdk`。
+- 联调本地 `plugin-sdk`。
 - 对主体和插件执行完整兼容性验收。
 - 更新某个组件的已验证集成基线。
 - 集中生成并安装一组可追溯的交付产物。
 
 子模块普通功能提交不应立即更新外层 gitlink。只有对应提交已经推送、完成组件验证并需要进入已验证组合时，才在外层仓库更新指针。
 
-## UI 设计规范
+## 文档入口
 
 宿主应用和所有插件的新增、重构与评审应共同使用以下两份文件作为 UI 规范：
 
 - [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)：设计模式规范正文，定义信息架构、导航、视觉 token、共享组件、状态反馈、现行交互、文案、无障碍和评审清单。
 - [`docs/ui-redesign-preview.html`](docs/ui-redesign-preview.html)：与规范配套的可视化样例和预览，可在浏览器中切换浅色／深色并查看宿主页、插件页、组件及响应式布局。
-- [`docs/plugin-runtime-v2-refactor-plan.md`](docs/plugin-runtime-v2-refactor-plan.md)：Android-first 的 Web Tool、可选 WASM、Native Provider、后台任务与分阶段迁移方向。
-- [`docs/product-roadmap.md`](docs/product-roadmap.md)：Runtime v2、AI 开发、发布平台与跨平台的独立优先级和依赖关系。
+- [`docs/plugin-runtime-architecture.md`](docs/plugin-runtime-architecture.md)：现行插件类型、权限、数据、后台任务、Provider 信任边界和剩余迁移计划。
+- [`docs/product-roadmap.md`](docs/product-roadmap.md)：插件运行时、AI 开发、发布平台与跨平台的独立优先级和依赖关系。
 - [`docs/ai-plugin-development-plan.md`](docs/ai-plugin-development-plan.md)：Developer Agent、AI Provider、草稿运行时与人工批准边界。
 - [`docs/publication-platform-plan.md`](docs/publication-platform-plan.md)：私有草稿、unlisted、公共社区和 GitHub Adapter 的分阶段发布平台。
-- [`docs/data-package-v3.md`](docs/data-package-v3.md)：统一 `.atsbackup` v3 的项目、保护区、兼容和删除边界。
-- [`docs/migration-bridge-data-map.md`](docs/migration-bridge-data-map.md)：Migration Bridge 的旧数据 Dataset 映射、删除约束和验收矩阵。
+- [`docs/data-management.md`](docs/data-management.md)：统一 `.atsbackup` v3、旧数据 Dataset 映射、删除边界与迁移验收矩阵。
 
 Markdown 负责说明规则与适用边界，HTML 负责示范规则落地后的视觉效果；两者应同时参考，不能只复制样例外观而忽略交互、状态和无障碍要求。若实际 Compose 设计系统、规范正文与预览出现差异，应先以 `app/plugin-sdk` 中当前公开的 token／组件和已交付宿主行为核实事实，再同步更新这两份文档。
 
@@ -54,13 +54,13 @@ git submodule update --init --recursive
 git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
 ```
 
-运行时索引已经作为第五个子模块固定在 `plugin-registry/`。只维护索引生成器时，也可以单独克隆它：
+运行时索引已经作为独立子模块固定在 `plugin-registry/`。只维护索引生成器时，也可以单独克隆它：
 
 ```powershell
 git clone https://github.com/android-tool-suite/plugin-registry.git
 ```
 
-插件只通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码。独立构建前需要先准备其 `gradle.properties` 中 `atsPluginSdkVersion` 对应的 SDK；联调未发布 SDK 时再使用本工作区的临时 Maven 仓库流程。
+含 Android/API1 代码的插件只通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码；纯 Web/Worker 插件可直接打包。联调本地 SDK 时使用本工作区的临时 Maven 仓库流程。
 
 ## 一键构建
 
@@ -75,10 +75,10 @@ git clone https://github.com/android-tool-suite/plugin-registry.git
 1. 运行插件索引生成器的纯 Python 单元测试。
 2. 构建主体 APK。
 3. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
-4. 使用该临时 SDK 构建无障碍插件。
-5. 运行 Phigros 插件 JVM 测试并构建插件。
-6. 运行抽卡分析插件 JVM 测试并构建插件。
-7. 所有步骤成功后，将四个产物、SHA-256 校验和与包含五个子模块提交号的构建清单复制到外层 `artifacts/`。
+4. 使用该临时 SDK 构建并签名 Shizuku 插件。
+5. 打包纯 Web/Worker 无障碍插件。
+6. 运行 Phigros 与抽卡插件 JVM 测试并构建插件。
+7. 所有步骤成功后，将五个产物、SHA-256 校验和与包含六个子模块提交号的构建清单复制到外层 `artifacts/`。
 
 开发中需要增量构建或临时跳过测试时：
 
@@ -92,6 +92,7 @@ git clone https://github.com/android-tool-suite/plugin-registry.git
 ```text
 artifacts/
 ├─ android-tool-suite-debug.apk
+├─ shizuku-auth.atsplugin
 ├─ accessibility-grant.atsplugin
 ├─ gacha-analysis.atsplugin
 ├─ phigros-advisor.atsplugin
@@ -124,16 +125,16 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和三个插件都支持两个发布通道：`main` 分支 CI 成功后创建 `debug-<完整提交 SHA>` 历史快照并更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
+主体和四个插件都支持两个发布通道：`main` 分支 CI 成功后创建 `debug-<完整提交 SHA>` 历史快照并更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
 
-运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区的第五个子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
+运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
 
-Release 应用默认使用正式插件仓库，但可在仓库页主动切换到调试仓库；Debug 应用默认使用调试仓库。未推送远程的 `.atsplugin` 仍可从同一页面本地导入，并明确显示为未经仓库验证。
+Release 应用默认使用正式插件仓库，但可在仓库页主动切换到调试仓库；Debug 应用默认使用调试仓库。本地 `.atsplugin` 仍可从同一页面导入，并明确显示为未经仓库验证。
 
 插件仓库与外层工作区职责不同：
 
 - `plugin-registry` 是面向已安装应用的运行时分发索引。
-- `workspace` 锁定经过完整构建与索引测试验证的五个源码提交。
+- `workspace` 锁定经过完整构建与索引测试验证的六个源码提交。
 - 发布组件不会自动移动外层 gitlink；只有完成 Release 和集成验收后才提升外层基线。
 
 完整构建并通过模拟器测试后，把最新集中产物安装到实体设备。仅连接一个实体设备时可自动选择；多设备时必须指定 serial：
@@ -145,7 +146,7 @@ Release 应用默认使用正式插件仓库，但可在仓库页主动切换到
 .\tools\install-latest.ps1 -Serial <设备序列号> -Plugins gacha-analysis
 ```
 
-安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入三个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；统一 `.atsbackup` v3 可在一个包中组合宿主迁移状态与按插件选择的 API1 Dataset，并兼容 Bridge v2 和旧宿主迁移包导入。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
+安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入四个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；统一 `.atsbackup` v3 可在一个包中组合宿主迁移状态与按插件选择的 API1 Dataset，并兼容 Bridge v2 和旧宿主迁移包导入。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。
 

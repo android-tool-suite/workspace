@@ -1,7 +1,7 @@
-# Android Tool Suite 插件运行时重构计划
+# Android Tool Suite 插件运行时架构与迁移
 
-状态：已接受的实施基线
-更新日期：2026-08-28
+状态：现行架构基线
+更新日期：2026-08-29
 实施范围：Android-first；本计划不实现 iOS、Desktop 或其他平台宿主
 
 ## 1. 决策摘要
@@ -19,11 +19,10 @@ Android Tool Suite（ATS）的长期定位是：
 
 WASM 是可选能力，不是普通插件的入门门槛。当前只做 Android 运行时，但清单、RPC、数据和任务接口不得暴露 `Activity`、`Context`、`Intent`、Binder 等 Android 类型，以便未来在不重写插件协议的前提下增加其他平台实现。
 
-AI 插件开发与 ATS 发布平台不属于本计划的阶段：它们分别维护在 [ai-plugin-development-plan.md](ai-plugin-development-plan.md) 和 [publication-platform-plan.md](publication-platform-plan.md)，优先级均低于 Runtime v2。总体排序见 [product-roadmap.md](product-roadmap.md)。
+AI 插件开发与 ATS 发布平台不属于本架构的实施阶段：它们分别维护在 [ai-plugin-development-plan.md](ai-plugin-development-plan.md) 和 [publication-platform-plan.md](publication-platform-plan.md)，优先级均低于插件运行时。总体排序见 [product-roadmap.md](product-roadmap.md)。
 
 相似项目、插件系统、WebView、后台 JavaScript、WASM 与 DeepSeek Harness 的证据和取舍见
-[runtime-v2-research-report.md](runtime-v2-research-report.md)。调研只为决策提供证据；下面列出的 ADR
-才是实现约束。
+[plugin-runtime-research-report.md](plugin-runtime-research-report.md)。调研只为决策提供证据；本文记录的冻结决策才是实现约束。
 
 ## 2. 本轮目标与非目标
 
@@ -90,7 +89,7 @@ Provider 只实现 Definition，Consumer 只依赖 Definition。Provider 可以�
 最小包使用 `ui/*.json` 描述页面、状态 Query 和按钮 Action。宿主只渲染规范允许的分段、卡片、
 文本、指标、状态、提示、按钮与状态页；不存在任意表达式、HTML 或插件代码执行。声明式页面与主页
 组件直接复用 Compose token、深浅主题、无障碍语义和响应式边界，完整规则见
-[ADR-0008](adr/0008-web-and-declarative-ui.md)。
+本文件第 6 节。
 
 ### 4.2 WebView-rendered Tool
 
@@ -136,7 +135,7 @@ Native Provider 用于无法由 Web/WASM 直接实现的 Android 能力，例如
 manifest、UserService 类和 Binder 生命周期，本身不注册业务 Capability；单个 `shizuku_auth`
 全信任包通过 bridge 注册窄 Capability，并同时贡献授权 UI。普通
 Tool 不得直接调用实现类或旧 `PluginHost` shell 方法。完整规则
-见 [ADR-0003](adr/0003-native-provider-loading-and-trust.md)。
+见 本文件第 4.4 与第 8 节。
 
 工具应依赖业务能力，例如 `accessibility.manage`，而不是依赖具体的 `shizuku.shell`。这样未来可由 Shizuku、Root、ADB 或平台原生实现提供同一契约。
 
@@ -211,8 +210,8 @@ lastRun(taskId)
 
 Android 使用每插件独立的 HTTPS 虚拟源与 `WebViewCompat.addWebMessageListener` 精确来源白名单；
 DOM Storage 默认关闭，持久数据只走 ATS Storage。虚拟源、基线 CSP、导航、renderer 终止与熔断规则
-见 [ADR-0001](adr/0001-web-origin-csp-and-network.md)。RPC 握手、256 KiB 消息上限、取消、blob/cursor
-和兼容规则见 [ADR-0002](adr/0002-rpc-envelope-and-versioning.md)。
+见 本文件第 6 节。RPC 握手、256 KiB 消息上限、取消、blob/cursor
+和兼容规则见 本文件第 6 节。
 
 ### 6.2 主题与宿主外壳
 
@@ -242,8 +241,8 @@ trigger -> host scheduler -> worker entry -> capability/storage -> result
 `javascript-worker`。JavaScript worker 使用 AndroidX JavaScriptEngine 独立进程，持久调度使用
 WorkManager；不支持的设备按 manifest 的 required/optional 语义拒绝或降级。WASM worker 在 ABI、
 冷启动、内存和中断语义验证后加入。后台规则见
-[ADR-0004](adr/0004-background-runtime.md)，WASM/WIT 边界见
-[ADR-0005](adr/0005-wasm-and-wit-boundary.md)。
+本文件第 7 节，WASM/WIT 边界见
+本文件第 7 节。
 
 适用任务包括：
 
@@ -326,8 +325,7 @@ manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源
 - 升级/降级根据可读写数据版本判断，不只比较插件版本号。
 - 空环境恢复是备份有效性的最终证明。
 
-V2 物理布局、SQLite/blob 配额、Keystore/AES-GCM、staging generation 和 active 指针原子切换已由
-[ADR-0006](adr/0006-storage-secret-and-generation.md) 固定。
+插件数据物理布局、SQLite/blob 配额、Keystore/AES-GCM、staging generation 和 active 指针原子切换由本节固定。
 
 ### 10.2 Migration Bridge
 
@@ -339,16 +337,16 @@ V2 物理布局、SQLite/blob 配额、Keystore/AES-GCM、staging generation 和
 - API1 插件可声明独立 Dataset 删除，宿主展开依赖影响并按反向依赖顺序执行；
 - 不安装新运行时，不写入新运行时 generation，也不承担长期双向同步；
 - 早期 Debug 往返已验证格式和插件适配器，1.6.1 同包名正式版负责读取既有正式私有数据；
-- 归档契约见 [data-package-v3.md](data-package-v3.md)，Dataset 清单和验收矩阵见 [migration-bridge-data-map.md](migration-bridge-data-map.md)。
+- 归档契约、旧 Dataset 映射和验收矩阵统一见 [data-management.md](data-management.md)。
 
-Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后删除，不演化成永久双运行时 API。
+Bridge 契约在完成正式数据迁移并经过两个稳定 Host 版本且不少于 90 天后删除，不演化成永久双运行时 API。
 
-## 11. 现有 V2 原型取舍
+## 11. 历史原型取舍
 
 | 原型内容 | 判定 | 后续处理 |
 | --- | --- | --- |
 | `.atsbackup` v3 分区编解码、完整性和加密 | 保留 | 作为 Bridge 与未来备份语义基础；继续保留 v2 只读兼容测试 |
-| `LegacyDataBridge`、三插件旧数据适配器和 fixture | 保留但临时 | 支持 API1 旧存储的数据管理和正式迁移；越过回滚窗口后删除 |
+| `LegacyDataBridge` 与旧数据适配器 | 部分保留 | 无障碍旧实现已在迁移完成后删除；Phigros 与抽卡适配器继续服务旧存储，越过回滚窗口后删除 |
 | Dataset ID、格式版本、依赖、敏感标记、恢复模式 | 保留语义 | 移入平台无关 schema，不保留 Android `Activity` 接口 |
 | staging generation、校验后切换、回滚思想 | 保留语义并重写 | 由 StorageService 实现，不移植原 `PluginDataManager` 代码 |
 | Runtime Backend 抽象 | 保留概念 | 先实现 Web/Worker Backend；隔离进程或独立 UID 是未来可替换 Backend |
@@ -370,7 +368,7 @@ Bridge 契约在完成正式数据迁移和至少一个版本的回滚窗口后�
 
 交付物：
 
-- V2 原型归档分支；
+- 历史原型归档分支；
 - 宿主与三个插件的 Bridge Debug 预发布及 1.6.1 正式发布；
 - 统一 `.atsbackup` v3、Dataset 清单、fixture、混合保护区和损坏包测试；
 - 按插件导入／导出／删除和 v2／旧迁移包兼容入口；
@@ -412,9 +410,9 @@ Capability、权限、主题、加载／空／错误外壳和主页组件；旧 
 
 ### 阶段 3：Capability 与 Native Provider
 
-实现状态（2026-08-27）：宿主能力路由、版本解析、health/backoff、签名 `trusted-provider` 冷启动
-装载与全信任包约束已完成。`shizuku.control` 和 `accessibility.manage` 已从宿主内置 Provider
-迁移到合并 UI 与底层实现的 `shizuku_auth`；宿主只保留最小 bridge。Capability 权限已覆盖默认待决定、scope 指纹、
+实现状态（2026-08-29）：宿主能力路由、版本解析、health/backoff、签名 `trusted-provider` 冷启动
+装载与全信任包约束已完成。`shizuku.control` 和 `accessibility.manage` 已迁移到独立 `plugin-shizuku-auth`
+仓库中的合并 UI/Provider 包；宿主只保留最小 bridge。Capability 权限已覆盖默认待决定、scope 指纹、
 管理 UI、调用／事件检查、在途取消、后台停调度和有限审计；普通 Tool 夹带原生载荷会被打包端和安装端拒绝。正式 Provider 发布仍必须使用
 CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验收。
 
@@ -432,7 +430,7 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 
 实现状态（2026-08-24）：WorkManager 调度、provider-task、JavaScriptSandbox worker、手动／周期／
 约束／前台／Provider 事件、超时、重试、并发租约、历史与事件已完成；无隐藏 WebView。WASM 继续
-按 ADR-0005 保持可选候选，不因未通过体积与中断性实测而伪装为已交付 Backend。
+保持为可选候选，不因未通过体积与中断性实测而伪装为已交付 Backend。
 
 交付物：
 
@@ -463,12 +461,12 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 ### 阶段 6：开发体验与旧运行时退役
 
 实现状态（2026-08-24）：`ats create`、`ats dev`、Capability mock、自动刷新、Android Debug 同源代理、
-契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达 ADR-0007 的两个稳定版本／90 天硬门槛，
+契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达两个稳定版本／90 天硬门槛，
 因此当前正确状态是冻结而非提前删除。
 
 交付物：
 
-- `npm create ats-plugin`、`ats dev`、示例和文档；
+- `ats create`、`ats dev`、示例和文档；
 - Capability 模拟器、契约测试套件和兼容性 CI；
 - 停止发布 API1 插件；
 - 删除 Bridge、旧 AAR Tool API 和已确认无用的兼容代码。
@@ -490,21 +488,21 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 - 平台：当前产物只有 Android；公共协议中没有 Android 类和物理路径。
 - 安全表述：普通 V3 Tool 的未授权能力是 Router 强制边界；API1／trusted-provider 是全信任原生代码，不能混为一谈。
 
-## 14. 在编码前必须冻结的决策
+## 14. 冻结架构决策
 
-阶段 1 的前置决策已经在 2026-08-21 冻结：
+冻结决定统一如下；详细实现分别由本文前述章节和契约 schema 约束。
 
-1. [ADR-0001：Web 虚拟源、CSP 与网络边界](adr/0001-web-origin-csp-and-network.md)；
-2. [ADR-0002：RPC envelope、取消、数据流与版本协商](adr/0002-rpc-envelope-and-versioning.md)；
-3. [ADR-0003：Native Provider 载荷、装载与信任根](adr/0003-native-provider-loading-and-trust.md)；
-4. [ADR-0004：后台任务首版执行器](adr/0004-background-runtime.md)；
-5. [ADR-0005：WASM 引擎评估与 WIT 子集](adr/0005-wasm-and-wit-boundary.md)；
-6. [ADR-0006：Dataset 存储、SecretStore 与 generation 切换](adr/0006-storage-secret-and-generation.md)；
-7. [ADR-0007：API1 退出、回滚窗口与发布顺序](adr/0007-api1-exit-and-release-order.md)；
-8. [ADR-0008：统一声明式 UI 与可选 WebView Renderer](adr/0008-web-and-declarative-ui.md)；
-9. [ADR-0009：插件 Capability 权限生命周期](adr/0009-plugin-permission-lifecycle.md)；
-10. [ADR-0010：Shizuku 授权与底层能力合并外置](adr/0010-external-shizuku-authorization-tool.md)。
+| 领域 | 冻结决定 |
+| --- | --- |
+| Web 安全 | 每插件使用独立 HTTPS 虚拟源、严格 CSP 和主 frame 消息监听；禁用文件访问、Cookie、DOM 持久化和任意导航，外部网络只能经过带 scope 的 Capability。 |
+| RPC | 先完成 `hello/ready` 协商；每条消息绑定 plugin/session/request，JSON 上限 256 KiB，支持 deadline、取消、事件序号、cursor/blob 与结构化错误。 |
+| Native Provider | 只有签名的 `trusted-provider` 可以携带 `android/provider.apk`；包先在不可变 generation 中校验，再通过受限父加载器装载，升级后冷启动切换。 |
+| 后台任务 | 持久调度使用 WorkManager；Provider task 与 JavaScript worker 共用任务历史、约束、超时、有界重试和并发策略，WebView 不承担后台执行。 |
+| WASM/WIT | WASM 不是首版必需项；通过体积、中断、API 24/26 和引擎故障域实测后才能启用，WIT 不暴露 Android、文件系统、socket 或宿主内存。 |
+| 数据 | KV、blob、Secret 与 Dataset 按插件和 generation 隔离，写入使用 staging/校验/原子切换；Secret 绑定 AAD，备份沿用 `.atsbackup` v3。已交付的 `runtime-v2` 磁盘命名空间仅为数据兼容保留。 |
+| API1 退出 | API1 冻结为兼容与迁移接口；最后一个迁移插件发布后仍需两个稳定 Host 版本且不少于 90 天，并完成空环境恢复和降级演练，才能删除旧代码。 |
+| UI | format v3 只有一个 `ui/*.json` 声明入口；简单页面由 Host renderer 绘制，复杂页面由 `webview` renderer 绘制，两者共享宿主主题、外壳和状态语义。 |
+| 权限 | 私有存储等运行基础不展示开关；普通插件的敏感 Capability 默认待决定并在每次调用重新检查，撤销会取消在途调用和后台任务。API1 与 trusted-provider 不伪装成可沙箱化。 |
+| Shizuku | `shizuku_auth` 是与其他插件并列的独立签名仓库；同一包提供授权 UI、主页组件和窄 Capability，宿主只保留 Android/Shizuku 生命周期所需的最小桥。 |
 
-后续实现若发现设备证据与 ADR 冲突，必须在同一变更中先修订 ADR、说明迁移影响并更新契约
-fixture；不得只让 Kotlin/TypeScript 实现偏离文档。API1 退出按 ADR-0007 的双稳定版本和 90 天窗口
-执行，不能因为新运行时已能启动就提前删除旧数据路径。
+后续若设备证据与这些决定冲突，必须在同一变更中更新本节、相关实现章节、迁移影响和契约 fixture；不得只让 Kotlin/TypeScript 实现偏离文档。

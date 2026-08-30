@@ -1,7 +1,7 @@
-# `.atsbackup` v3 统一数据包契约
+# Android Tool Suite 数据管理与迁移
 
-状态：1.6.1 正式版实现基线
-更新日期：2026-08-21
+状态：现行数据契约
+更新日期：2026-08-29
 
 ## 1. 用途
 
@@ -109,4 +109,38 @@ UI 要求至少 8 位密码。随机 salt/nonce 使相同内容的两次导出�
 - v2 导入保持原有整包明文或整包密码语义。
 - 旧宿主迁移包通过统一导入入口识别并走原事务流程。
 - v3 解析器不猜测未来版本；未知版本明确拒绝。
-- Runtime v2 可以复用项目描述、保护区和完整性语义，但应以平台无关接口替换 `Activity` 和 API1 私有路径。
+- 插件运行时复用项目描述、保护区和完整性语义，并以平台无关接口替换 `Activity` 和 API1 私有路径。
+
+## 8. 旧数据 Dataset 映射
+
+下表只描述 API1 私有数据迁移到宿主管理 Dataset 的边界；新插件不得直接依赖这些物理路径。
+
+| 插件 | Dataset ID | 类别 | 恢复语义 | 依赖 | 旧数据来源与目标 | 敏感 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 无障碍授权 | `accessibility-settings` | SETTINGS | REPLACE | 无 | 旧 `accessibility_grant` 偏好迁移到 format v3 Dataset；当前插件只读写宿主 Dataset | 否 |
+| Phigros | `profiles` | SETTINGS | REPLACE | 无 | 不含明文令牌的档案、选择与主页摘要 | 否 |
+| Phigros | `analysis-data` | DATA | REPLACE | `profiles` | `files/phigros-data-studio/` 中除曲库和临时文件外的数据 | 否 |
+| Phigros | `session-tokens` | SECRET | REPLACE | `profiles` | Keystore 解密后的现有 SessionToken，默认进入密码区 | 是 |
+| Phigros | `song-catalog` | CACHE | REPLACE | 无 | 曲库缓存；默认不选，可重新生成 | 否 |
+| 抽卡分析 | `gacha-settings` | SETTINGS | REPLACE / MERGE | 无 | 受支持的标量与字符串集合；合并保留包内未涉及的键 | 否 |
+| 抽卡分析 | `genshin-records` | DATA | REPLACE / MERGE | 无 | 原神账号、记录与卡池完成状态 | 否 |
+| 抽卡分析 | `starrail-records` | DATA | REPLACE / MERGE | 无 | 星铁账号、记录与卡池完成状态 | 否 |
+| 抽卡分析 | `mihoyo-session` | SECRET | REPLACE | 无 | Keystore 解密后的米游社会话，默认进入密码区 | 是 |
+
+宿主自身使用 `android_tool_suite/app-settings`、`android_tool_suite/plugin-enabled-state` 和独立的 `plugin-package.<pluginId>` 项。Gradle 缓存、临时文件、WebView Cookie、日志、截图、下载中转和无法解密的密文占位都不得导出。
+
+## 9. 发布验收矩阵
+
+| 场景 | 必须满足 |
+| --- | --- |
+| 导出选择 | 每项同时提供不导出、明文和加密；敏感项默认加密 |
+| 依赖处理 | 选择项自动补齐依赖；取消依赖会同步取消 dependents |
+| 错误密码、截断或篡改 | 认证或完整性检查失败，不修改目标数据，并删除暂存明文 |
+| 空环境恢复 | 所选宿主状态、插件包和 Dataset 全部恢复，凭据使用目标 Keystore 重新加密 |
+| 恢复后再导出 | 排除时间、来源版本和随机加密参数后，Dataset 语义内容一致 |
+| 已有数据 | 明确显示替换／合并能力；不支持的方式保持不可选并解释原因 |
+| 缺少插件 | 只有同时选择该插件包时才允许恢复其 Dataset，安装后重新探测能力 |
+| 单游戏删除 | 只清理目标游戏的账号、记录和完成状态，不影响另一游戏 |
+| 凭据故障 | Keystore 缺失或损坏时导出失败，原值不删除、不写占位 |
+
+API1 Bridge 只有在所有剩余官方插件完成迁移、至少经过两个稳定 Host 版本且不少于 90 天，并完成空环境恢复与降级演练后才能删除。归档解析器仍保留对旧 `.atsbackup` v2/v3 的最小只读兼容。

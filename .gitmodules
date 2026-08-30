@@ -4,6 +4,9 @@
 [submodule "plugins/accessibility-grant"]
 	path = plugins/accessibility-grant
 	url = https://github.com/android-tool-suite/plugin-accessibility-grant.git
+[submodule "plugins/shizuku-auth"]
+	path = plugins/shizuku-auth
+	url = https://github.com/android-tool-suite/plugin-shizuku-auth.git
 [submodule "plugins/phigros-advisor"]
 	path = plugins/phigros-advisor
 	url = https://github.com/android-tool-suite/plugin-phigros-advisor.git

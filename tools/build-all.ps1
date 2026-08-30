@@ -13,15 +13,14 @@ Set-StrictMode -Version Latest
 $workspaceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $appRoot = Join-Path $workspaceRoot 'app'
 $registryRoot = Join-Path $workspaceRoot 'plugin-registry'
+$shizukuRoot = Join-Path $workspaceRoot 'plugins\shizuku-auth'
 $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
 $gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
-$shizukuProject = Join-Path $appRoot 'examples\runtime-v2\shizuku-auth'
-$shizukuArtifact = Join-Path $appRoot 'artifacts\shizuku-auth.atsplugin'
-$shizukuProviderModule = Join-Path $appRoot 'trusted-shizuku-provider'
-$shizukuPackageProject = Join-Path $appRoot 'build\runtime-v2\shizuku-auth-package'
+$shizukuArtifact = Join-Path $shizukuRoot 'artifacts\shizuku-auth.atsplugin'
 $providerPublicKey = Join-Path $registryRoot 'registry-public.pem'
 $sdkRepository = Join-Path $appRoot 'plugin-sdk\build\repository'
+$pluginCli = Join-Path $appRoot 'tools\plugin\ats.py'
 $stagingDirectory = Join-Path $workspaceRoot 'temp\build-all-staging'
 $outputDirectory = Join-Path $workspaceRoot 'artifacts'
 
@@ -30,11 +29,12 @@ function Assert-WorkspaceLayout {
         (Join-Path $appRoot 'settings.gradle'),
         (Join-Path $registryRoot 'sources.json'),
         (Join-Path $registryRoot 'tests\test_build_registry.py'),
+        (Join-Path $shizukuRoot 'settings.gradle'),
+        (Join-Path $shizukuRoot 'src\manifest.template.json'),
         (Join-Path $accessibilityRoot 'settings.gradle'),
         (Join-Path $phigrosRoot 'settings.gradle'),
         (Join-Path $gachaRoot 'settings.gradle'),
-        (Join-Path $shizukuProject 'manifest.json'),
-        (Join-Path $shizukuProviderModule 'build.gradle'),
+        $pluginCli,
         $providerPublicKey
     )
     foreach ($path in $required) {
@@ -99,7 +99,7 @@ function Assert-PluginPackage([string]$Path, [string]$PythonPath) {
     }
     if ($formatVersion -eq 3) {
         Invoke-Native $PythonPath @(
-            (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
+            $pluginCli,
             'verify',
             $Path
         )
@@ -113,7 +113,7 @@ if ($null -eq $gradle) {
 }
 $python = Get-Command $PythonExecutable -ErrorAction SilentlyContinue
 if ($null -eq $python) {
-    throw "找不到 Python：$PythonExecutable。Runtime v2 产物验证需要 Python 3。"
+    throw "找不到 Python：$PythonExecutable。插件产物验证需要 Python 3。"
 }
 
 $buildTasks = if ($NoClean) { @('collectArtifacts') } else { @('clean', 'collectArtifacts') }
@@ -126,7 +126,7 @@ if (-not $SkipTests) {
     )
     Invoke-Native $python.Source @(
         '-m', 'unittest', 'discover',
-        '-s', (Join-Path $appRoot 'tools\runtime-v2\tests'),
+        '-s', (Join-Path $appRoot 'tools\plugin\tests'),
         '-v'
     )
     Invoke-Native $gradle.Source @(
@@ -134,6 +134,14 @@ if (-not $SkipTests) {
         ':runtime-contract:testDebugUnitTest',
         ':app:testDebugUnitTest'
     )
+}
+
+function Get-RepositoryRevision([string]$Repository) {
+    $output = & git -c "safe.directory=$Repository" -C $Repository rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return 'uncommitted'
+    }
+    return ($output -join "`n").Trim()
 }
 
 if ([string]::IsNullOrWhiteSpace($ProviderSigningKey)) {
@@ -154,46 +162,21 @@ if ([string]::IsNullOrWhiteSpace($ProviderSigningKey) -or -not (Test-Path -Liter
 $ProviderSigningKey = [IO.Path]::GetFullPath($ProviderSigningKey)
 
 Invoke-Native $gradle.Source (@('-p', $appRoot) + $buildTasks)
-Invoke-Native $gradle.Source @('-p', $appRoot, ':trusted-shizuku-provider:assembleDebug')
-
-Reset-SafeDirectory $shizukuPackageProject
-Copy-Item -LiteralPath (Join-Path $shizukuProject 'manifest.json') `
-    -Destination (Join-Path $shizukuPackageProject 'manifest.json')
-foreach ($payloadDirectory in @('ui', 'web', 'workers')) {
-    $source = Join-Path $shizukuProject $payloadDirectory
-    if (Test-Path -LiteralPath $source -PathType Container) {
-        Copy-Item -LiteralPath $source -Destination (Join-Path $shizukuPackageProject $payloadDirectory) -Recurse
-    }
-}
-$providerAndroidDirectory = Join-Path $shizukuPackageProject 'android'
-New-Item -ItemType Directory -Path $providerAndroidDirectory -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $shizukuProviderModule 'build\outputs\apk\debug\trusted-shizuku-provider-debug.apk') `
-    -Destination (Join-Path $providerAndroidDirectory 'provider.apk')
-Invoke-Native $python.Source @(
-    (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
-    'pack',
-    $shizukuPackageProject,
-    '--output', $shizukuArtifact,
-    '--signing-key', $ProviderSigningKey,
-    '--public-key', $providerPublicKey
-)
-Invoke-Native $python.Source @(
-    (Join-Path $appRoot 'tools\runtime-v2\ats.py'),
-    'verify',
-    $shizukuArtifact,
-    '--public-key', $providerPublicKey,
-    '--require-signature'
-)
 Invoke-Native $gradle.Source @(
     '-p', $appRoot,
     ':plugin-sdk:publishReleasePublicationToPluginSdkRepository'
 )
 
 $sdkProperty = "-PatsSdkRepository=$sdkRepository"
-Invoke-Native $gradle.Source (@('-p', $accessibilityRoot, $sdkProperty) + $buildTasks)
-if (-not $SkipTests) {
-    Invoke-Native $gradle.Source @('-p', $accessibilityRoot, $sdkProperty, 'testDebugUnitTest')
-}
+$shizukuProperties = @(
+    $sdkProperty,
+    "-PatsCliPath=$pluginCli",
+    "-PatsProviderSigningKey=$ProviderSigningKey",
+    "-PatsProviderPublicKey=$providerPublicKey",
+    "-PatsPython=$($python.Source)"
+)
+Invoke-Native $gradle.Source (@('-p', $shizukuRoot) + $shizukuProperties + $buildTasks)
+Invoke-Native $gradle.Source (@('-p', $accessibilityRoot) + $buildTasks)
 if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $phigrosRoot, $sdkProperty, 'testDebugUnitTest')
 }
@@ -256,20 +239,21 @@ $manifestArtifacts = foreach ($artifact in $artifacts) {
 $manifest = [ordered]@{
     generatedAt = [DateTimeOffset]::Now.ToString('o')
     commits = [ordered]@{
-        app = Get-NativeOutput 'git' @('-c', "safe.directory=$appRoot", '-C', $appRoot, 'rev-parse', 'HEAD')
-        accessibilityGrant = Get-NativeOutput 'git' @('-c', "safe.directory=$accessibilityRoot", '-C', $accessibilityRoot, 'rev-parse', 'HEAD')
-        phigrosAdvisor = Get-NativeOutput 'git' @('-c', "safe.directory=$phigrosRoot", '-C', $phigrosRoot, 'rev-parse', 'HEAD')
-        gachaAnalysis = Get-NativeOutput 'git' @('-c', "safe.directory=$gachaRoot", '-C', $gachaRoot, 'rev-parse', 'HEAD')
-        pluginRegistry = Get-NativeOutput 'git' @('-c', "safe.directory=$registryRoot", '-C', $registryRoot, 'rev-parse', 'HEAD')
+        app = Get-RepositoryRevision $appRoot
+        shizukuAuth = Get-RepositoryRevision $shizukuRoot
+        accessibilityGrant = Get-RepositoryRevision $accessibilityRoot
+        phigrosAdvisor = Get-RepositoryRevision $phigrosRoot
+        gachaAnalysis = Get-RepositoryRevision $gachaRoot
+        pluginRegistry = Get-RepositoryRevision $registryRoot
     }
     tests = [ordered]@{
         phigrosDebugUnitTest = -not $SkipTests
         gachaDebugUnitTest = -not $SkipTests
         registryGeneratorUnitTest = -not $SkipTests
-        runtimeV2CliUnitTest = -not $SkipTests
+        pluginCliUnitTest = -not $SkipTests
         runtimeContractUnitTest = -not $SkipTests
         hostDebugUnitTest = -not $SkipTests
-        accessibilityDebugUnitTest = -not $SkipTests
+        accessibilityPackageBuild = $true
         shizukuTrustedPluginPackage = $true
     }
     artifacts = @($manifestArtifacts)

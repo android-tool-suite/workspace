@@ -117,6 +117,12 @@ $components = @(
         Build = $null
     },
     [pscustomobject]@{
+        Name = 'shizuku-auth'
+        RelativePath = 'plugins/shizuku-auth'
+        Path = (Join-Path $workspaceRoot 'plugins\shizuku-auth')
+        Build = (Join-Path $workspaceRoot 'plugins\shizuku-auth\build.gradle')
+    },
+    [pscustomobject]@{
         Name = 'accessibility-grant'
         RelativePath = 'plugins/accessibility-grant'
         Path = (Join-Path $workspaceRoot 'plugins\accessibility-grant')
@@ -168,7 +174,7 @@ $rows = foreach ($component in $components) {
         $sourceDirty = $true
     }
 
-    $head = Invoke-Git $component.Path @('rev-parse', 'HEAD')
+    $head = Invoke-GitOptional $component.Path @('rev-parse', 'HEAD')
     $locked = Invoke-GitOptional $workspaceRoot @(
         'rev-parse',
         "HEAD:$($component.RelativePath)"
