@@ -7,6 +7,7 @@ on:
       - app
       - plugin-registry
       - plugins/accessibility-grant
+      - plugins/shizuku-auth
       - plugins/phigros-advisor
       - plugins/gacha-analysis
       - .gitmodules
@@ -20,6 +21,7 @@ on:
       - app
       - plugin-registry
       - plugins/accessibility-grant
+      - plugins/shizuku-auth
       - plugins/phigros-advisor
       - plugins/gacha-analysis
       - .gitmodules
@@ -58,7 +60,19 @@ jobs:
 
       - name: Build and test locked component combination
         shell: pwsh
-        run: .\tools\build-all.ps1
+        env:
+          PROVIDER_SIGNING_KEY_PEM: ${{ secrets.PROVIDER_SIGNING_KEY_PEM }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PROVIDER_SIGNING_KEY_PEM)) {
+            throw 'Missing PROVIDER_SIGNING_KEY_PEM repository secret.'
+          }
+          $signingKey = Join-Path $env:RUNNER_TEMP 'provider-signing-key.pem'
+          [IO.File]::WriteAllText(
+            $signingKey,
+            $env:PROVIDER_SIGNING_KEY_PEM,
+            [Text.UTF8Encoding]::new($false)
+          )
+          .\tools\build-all.ps1 -ProviderSigningKey $signingKey
 
       - name: Upload verified artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
