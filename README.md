@@ -28,6 +28,7 @@
 - [`docs/ui-redesign-preview.html`](docs/ui-redesign-preview.html)：与规范配套的可视化样例和预览，可在浏览器中切换浅色／深色并查看宿主页、插件页、组件及响应式布局。
 - [`docs/plugin-runtime-architecture.md`](docs/plugin-runtime-architecture.md)：现行插件类型、权限、数据、后台任务、Provider 信任边界和剩余迁移计划。
 - [`docs/product-roadmap.md`](docs/product-roadmap.md)：插件运行时、AI 开发、发布平台与跨平台的独立优先级和依赖关系。
+- [`docs/follow-up-task-list.md`](docs/follow-up-task-list.md)：按 P0–P3 排序的后续执行清单、依赖和完成条件。
 - [`docs/ai-plugin-development-plan.md`](docs/ai-plugin-development-plan.md)：Developer Agent、AI Provider、草稿运行时与人工批准边界。
 - [`docs/publication-platform-plan.md`](docs/publication-platform-plan.md)：私有草稿、unlisted、公共社区和 GitHub Adapter 的分阶段发布平台。
 - [`docs/data-management.md`](docs/data-management.md)：统一 `.atsbackup` v3、旧数据 Dataset 映射、删除边界与迁移验收矩阵。

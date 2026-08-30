@@ -1,7 +1,7 @@
 # Android Tool Suite 插件运行时架构与迁移
 
 状态：现行架构基线
-更新日期：2026-08-29
+更新日期：2026-08-31
 实施范围：Android-first；本计划不实现 iOS、Desktop 或其他平台宿主
 
 ## 1. 决策摘要
@@ -339,14 +339,14 @@ manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源
 - 早期 Debug 往返已验证格式和插件适配器，1.6.1 同包名正式版负责读取既有正式私有数据；
 - 归档契约、旧 Dataset 映射和验收矩阵统一见 [data-management.md](data-management.md)。
 
-Bridge 契约在完成正式数据迁移并经过两个稳定 Host 版本且不少于 90 天后删除，不演化成永久双运行时 API。
+Bridge 契约在所有剩余插件完成正式数据迁移，并通过旧数据导出、空环境恢复、业务校验与降级演练后删除，不演化成永久双运行时 API。
 
 ## 11. 历史原型取舍
 
 | 原型内容 | 判定 | 后续处理 |
 | --- | --- | --- |
 | `.atsbackup` v3 分区编解码、完整性和加密 | 保留 | 作为 Bridge 与未来备份语义基础；继续保留 v2 只读兼容测试 |
-| `LegacyDataBridge` 与旧数据适配器 | 部分保留 | 无障碍旧实现已在迁移完成后删除；Phigros 与抽卡适配器继续服务旧存储，越过回滚窗口后删除 |
+| `LegacyDataBridge` 与旧数据适配器 | 部分保留 | 无障碍旧实现已在迁移完成后删除；Phigros 与抽卡适配器继续服务旧存储，完成迁移与回滚测试后删除 |
 | Dataset ID、格式版本、依赖、敏感标记、恢复模式 | 保留语义 | 移入平台无关 schema，不保留 Android `Activity` 接口 |
 | staging generation、校验后切换、回滚思想 | 保留语义并重写 | 由 StorageService 实现，不移植原 `PluginDataManager` 代码 |
 | Runtime Backend 抽象 | 保留概念 | 先实现 Web/Worker Backend；隔离进程或独立 UID 是未来可替换 Backend |
@@ -461,7 +461,7 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 ### 阶段 6：开发体验与旧运行时退役
 
 实现状态（2026-08-24）：`ats create`、`ats dev`、Capability mock、自动刷新、Android Debug 同源代理、
-契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达两个稳定版本／90 天硬门槛，
+契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达剩余插件全部迁移并通过恢复／降级测试的验收门槛，
 因此当前正确状态是冻结而非提前删除。
 
 交付物：
@@ -500,7 +500,7 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 | 后台任务 | 持久调度使用 WorkManager；Provider task 与 JavaScript worker 共用任务历史、约束、超时、有界重试和并发策略，WebView 不承担后台执行。 |
 | WASM/WIT | WASM 不是首版必需项；通过体积、中断、API 24/26 和引擎故障域实测后才能启用，WIT 不暴露 Android、文件系统、socket 或宿主内存。 |
 | 数据 | KV、blob、Secret 与 Dataset 按插件和 generation 隔离，写入使用 staging/校验/原子切换；Secret 绑定 AAD，备份沿用 `.atsbackup` v3。已交付的 `runtime-v2` 磁盘命名空间仅为数据兼容保留。 |
-| API1 退出 | API1 冻结为兼容与迁移接口；最后一个迁移插件发布后仍需两个稳定 Host 版本且不少于 90 天，并完成空环境恢复和降级演练，才能删除旧代码。 |
+| API1 退出 | API1 冻结为兼容与迁移接口；所有剩余插件完成迁移，并通过旧数据导出、空环境恢复、业务校验和降级演练后即可删除旧代码，不再附加版本数量或日历时间要求。 |
 | UI | format v3 只有一个 `ui/*.json` 声明入口；简单页面由 Host renderer 绘制，复杂页面由 `webview` renderer 绘制，两者共享宿主主题、外壳和状态语义。 |
 | 权限 | 私有存储等运行基础不展示开关；普通插件的敏感 Capability 默认待决定并在每次调用重新检查，撤销会取消在途调用和后台任务。API1 与 trusted-provider 不伪装成可沙箱化。 |
 | Shizuku | `shizuku_auth` 是与其他插件并列的独立签名仓库；同一包提供授权 UI、主页组件和窄 Capability，宿主只保留 Android/Shizuku 生命周期所需的最小桥。 |

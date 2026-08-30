@@ -1,7 +1,7 @@
 # Android Tool Suite 产品与架构路线图
 
 状态：现行路线
-更新日期：2026-08-29
+更新日期：2026-08-31
 实施范围：Android-first；其他平台只保留协议扩展点
 
 ## 1. 产品定位
@@ -21,11 +21,13 @@ Android Tool Suite（ATS）定位为“单一宿主中的个人工具平台”�
 
 优先关系是 `插件运行时与迁移 > AI 开发 > 发布平台 > 跨平台`。P1、P2 可以先写契约和原型，但不得占用 P0 的发布门槛，也不得要求运行时为尚未验证的社区功能增加耦合。
 
+各路线的可执行任务、依赖与完成条件统一维护在 [follow-up-task-list.md](follow-up-task-list.md)。路线图负责确定优先级，任务清单负责跟踪实施，不在两处重复定义架构契约。
+
 ## 3. 四条独立路线
 
 ### 3.1 插件运行时（P0）
 
-以 [plugin-runtime-architecture.md](plugin-runtime-architecture.md) 为唯一架构与迁移文档。清单、Host/WebView renderer、Capability 权限、全信任 Provider、Storage/Secret/Scheduler、外置 Shizuku 和首个 Web/Worker 插件均已落地；当前 P0 只剩 Phigros、抽卡迁移与 API1 退出窗口。
+以 [plugin-runtime-architecture.md](plugin-runtime-architecture.md) 为唯一架构与迁移文档。清单、Host/WebView renderer、Capability 权限、全信任 Provider、Storage/Secret/Scheduler、外置 Shizuku 和首个 Web/Worker 插件均已落地；当前 P0 只剩 Phigros、抽卡迁移与 API1 退出验收。
 
 首轮外部调研与项目映射见 [plugin-runtime-research-report.md](plugin-runtime-research-report.md)。冻结决策已合并到架构文档；UI 和后台继续使用不同执行器，API 24–25 不用隐藏 WebView 补齐 JavaScript worker。
 
@@ -45,7 +47,7 @@ Android Tool Suite（ATS）定位为“单一宿主中的个人工具平台”�
 
 | 当前内容 | 结论 | 去向 |
 | --- | --- | --- |
-| 已正式发布的 Migration Bridge 与统一 `.atsbackup` v3 | 保留为迁移和数据管理基线 | 以 1.6.1 同包名正式版读取现有私有数据；剩余插件迁移并越过回滚窗口后退役桥接 API |
+| 已正式发布的 Migration Bridge 与统一 `.atsbackup` v3 | 保留为迁移和数据管理基线 | 以 1.6.1 同包名正式版读取现有私有数据；剩余插件完成迁移并通过迁移、恢复、业务与降级测试后退役桥接 API |
 | Dataset ID、依赖、格式版本、恢复模式和保护方式 | 保留语义 | 固化到平台无关 schema，替换 `Activity` 接口 |
 | API1 插件的导入、导出、删除适配器 | 临时保留 | 只服务旧存储；不演化为新 Runtime 的永久存储 API |
 | Host + 通用 Sandbox 双 APK、远程 Compose UI | 放弃实现 | 原型分支只保留研究证据；当前实现改用声明式 UI、隔离 WebView 和可替换 Backend |
