@@ -176,6 +176,12 @@ $shizukuProperties = @(
     "-PatsPython=$($python.Source)"
 )
 Invoke-Native $gradle.Source (@('-p', $shizukuRoot) + $shizukuProperties + $buildTasks)
+if (-not $SkipTests) {
+    Invoke-Native $gradle.Source @('-p', $shizukuRoot, $sdkProperty, 'testDebugUnitTest')
+}
+if (-not $SkipTests) {
+    Invoke-Native $gradle.Source @('-p', $shizukuRoot, $sdkProperty, 'testDebugUnitTest')
+}
 Invoke-Native $gradle.Source (@('-p', $accessibilityRoot) + $buildTasks)
 if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $phigrosRoot, $sdkProperty, 'testDebugUnitTest')
