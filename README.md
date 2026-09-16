@@ -61,7 +61,7 @@ git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
 git clone https://github.com/android-tool-suite/plugin-registry.git
 ```
 
-含 Android/API1 代码的插件只通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码；纯 Web/Worker 插件可直接打包。联调本地 SDK 时使用本工作区的临时 Maven 仓库流程。
+只有包含 Native Provider 的全信任插件通过固定版本的 `com.androidtoolsuite:plugin-sdk` 编译，不直接依赖主体源码；纯 Web/Worker 插件可直接打包。联调本地 SDK 时使用本工作区的临时 Maven 仓库流程。
 
 ## 一键构建
 
@@ -78,7 +78,7 @@ git clone https://github.com/android-tool-suite/plugin-registry.git
 3. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
 4. 使用该临时 SDK 构建并签名 Shizuku 插件。
 5. 打包纯 Web/Worker 无障碍插件。
-6. 运行 Phigros 与抽卡插件 JVM 测试并构建插件。
+6. 运行 Phigros 与抽卡插件 Node 契约测试并构建 format v3 包。
 7. 所有步骤成功后，将五个产物、SHA-256 校验和与包含六个子模块提交号的构建清单复制到外层 `artifacts/`。
 
 开发中需要增量构建或临时跳过测试时：
@@ -147,7 +147,7 @@ Release 应用默认使用正式插件仓库，但可在仓库页主动切换到
 .\tools\install-latest.ps1 -Serial <设备序列号> -Plugins gacha-analysis
 ```
 
-安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入四个插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；统一 `.atsbackup` v3 可在一个包中组合宿主迁移状态与按插件选择的 API1 Dataset，并兼容 Bridge v2 和旧宿主迁移包导入。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
+安装脚本默认先安装包名为 `com.androidtoolsuite.app.debug` 的主体 Debug APK，再通过主体的 Debug ADB Receiver 导入四个 format v3 插件。Debug 与包名为 `com.androidtoolsuite.app` 的 Release 可以共存且数据隔离；统一 `.atsbackup` v3 管理宿主设置与插件 Dataset，并保留对旧 Bridge v2 和旧宿主迁移包的只读识别。可用 `-SkipApp` 或 `-Plugins none` 缩小范围。
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。
 

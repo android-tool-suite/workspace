@@ -33,7 +33,7 @@ AI 插件开发与 ATS 发布平台不属于本架构的实施阶段：它们分
 - UI 入口与后台入口分离；后台任务由宿主调度，不依赖常驻 WebView 或 `setInterval()`。
 - 任何普通插件都可用受限 Worker 实现版本化 Capability；只有必须以宿主身份与 Android/Shizuku 交互的实现使用全信任底层 Provider。
 - 用户可以逐插件允许或撤销敏感 Capability；scope 扩大后必须重新决定，事件和后台任务使用同一权限状态。
-- Shizuku 能力实现和授权 UI 都不使用宿主内置 `ToolPlugin`：前者是签名 `trusted-provider`，后者是依赖它的普通 V3 Tool。
+- Shizuku 能力实现和授权 UI 都不使用已退出的 API1 `ToolPlugin`：同一个签名 `trusted-provider` 包提供授权 UI、主页组件与底层能力。
 - 插件数据按命名空间管理，支持备份、校验、迁移、回滚与未来运行时替换。
 - 保持用户只安装和打开一个 ATS App；Provider 和工具的安装细节不扩散到桌面体验。
 - 保留现有签名索引、Debug/Release 渠道、依赖、升级/降级和数据兼容治理。
@@ -46,7 +46,7 @@ AI 插件开发与 ATS 发布平台不属于本架构的实施阶段：它们分
 - 不在第一阶段开放不受信任的任意第三方原生代码。
 - 不向普通插件提供裸 `runShellCommand()`、Binder 句柄或任意文件路径。
 - 不以完成强安全沙盒为新运行时首个里程碑；先稳定协议与完整工具闭环。
-- 不在 Migration Bridge 中实现新运行时的数据恢复或永久双向同步；只保留 API1 旧存储的导出与空环境回灌，用于证明 Dataset 可迁移。
+- 数据恢复只面向宿主管理的 format v3 Dataset；历史 API1 Bridge 与双向同步路径均已退出。
 - 不把 Developer Agent、AI Provider、发布社区或自托管平台作为 Runtime v2 的验收条件。
 
 ## 3. 目标架构
@@ -132,8 +132,8 @@ Native Provider 用于无法由 Web/WASM 直接实现的 Android 能力，例如
 
 “相同规则”不等于“相同风险”：Web-only 本地包可以经风险提示导入；包含 Native Provider 的包必须
 具有包内 publisher 签名且 publisher 位于信任根。随宿主编译的最小 Shizuku bootstrap 仅负责
-manifest、UserService 类和 Binder 生命周期，本身不注册业务 Capability；单个 `shizuku_auth`
-全信任包通过 bridge 注册窄 Capability，并同时贡献授权 UI。普通
+manifest 和共享 Shizuku 客户端 Binder 接收，本身不注册业务 Capability；所有可信 Provider 均可直接使用 Android/Binder 及宿主共享的 `rikka.shizuku.*` 客户端，不需要为每项特权操作扩展 Host/SDK。`shizuku_auth`
+自行实现 Shizuku 通信并注册窄 Capability，同时贡献授权 UI。旧 `TrustedPlatformBridge` 和 UserService 只作为已有 Provider 的按需兼容入口，不在启动时自动绑定。类加载器对宿主内部类的限制是依赖边界，不是可信代码的安全沙箱。普通
 Tool 不得直接调用实现类或旧 `PluginHost` shell 方法。完整规则
 见 本文件第 4.4 与第 8 节。
 
@@ -281,7 +281,7 @@ notification.post
 
 ### 8.3 授权含义
 
-普通 format v3 Tool 不允许携带原生代码，它的 Host Action、WebView RPC、Worker、事件与后台任务都只能经过 Capability Router；Router 在执行 Provider 前检查清单、scope 与当前授权，因此未授权能力是强制阻断边界。`trusted-provider` 与 API1 兼容插件仍是同进程可信代码，Capability 权限不限制它们自身；这两类风险必须分开描述。
+普通 format v3 Tool 不允许携带原生代码，它的 Host Action、WebView RPC、Worker、事件与后台任务都只能经过 Capability Router；Router 在执行 Provider 前检查清单、scope 与当前授权，因此未授权能力是强制阻断边界。`trusted-provider` 是唯一同进程可信插件类型，Capability 权限不限制它自身；这条风险必须单独说明。
 
 ## 9. 包格式草案
 
@@ -329,24 +329,24 @@ manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源
 
 ### 10.2 Migration Bridge
 
-当前 Migration Bridge 已随 1.6.1 正式版交付，使用统一 `.atsbackup` v3 在现有 v1 插件旧存储、宿主迁移状态和归档文件之间完成可验证往返：
+Migration Bridge 曾随 1.6.1 正式版交付，并完成 API1 数据到 format v3 Dataset 的迁移验收。当前实现已退出 Bridge 写入与 API1 执行路径：
 
-- 同一文件可包含宿主设置／插件包与按插件选择的 Dataset，明文区和密码保护区物理分离；
+- `.atsbackup` v3 继续包含宿主设置与按插件选择的 Dataset，明文区和密码保护区物理分离；
 - 保留流式写入、摘要、大小限制、Dataset 依赖和 AES-GCM 加密，并兼容 v2 与旧宿主迁移包导入；
-- 导入先在应用私有缓存完成整包认证和完整性校验，再按依赖恢复到 v1 旧存储；
-- API1 插件可声明独立 Dataset 删除，宿主展开依赖影响并按反向依赖顺序执行；
-- 不安装新运行时，不写入新运行时 generation，也不承担长期双向同步；
-- 早期 Debug 往返已验证格式和插件适配器，1.6.1 同包名正式版负责读取既有正式私有数据；
+- 导入先在应用私有缓存完成整包认证和完整性校验，再按依赖恢复到 format v3 Dataset generation；
+- 宿主私有 DatasetBridge 提供独立删除，宿主展开依赖影响并按反向依赖顺序执行；
+- 历史 API1 插件包只读识别，不再安装、装载或执行；
+- Phigros 与抽卡插件已完成 API1 导出、空环境恢复、业务校验、降级和实体设备迁移；
 - 归档契约、旧 Dataset 映射和验收矩阵统一见 [data-management.md](data-management.md)。
 
-Bridge 契约在所有剩余插件完成正式数据迁移，并通过旧数据导出、空环境恢复、业务校验与降级演练后删除，不演化成永久双运行时 API。
+公开 Bridge 契约、旧 AAR Tool API 与外部 Tool `DexClassLoader` 已删除，不演化成永久双运行时 API。
 
 ## 11. 历史原型取舍
 
 | 原型内容 | 判定 | 后续处理 |
 | --- | --- | --- |
 | `.atsbackup` v3 分区编解码、完整性和加密 | 保留 | 作为 Bridge 与未来备份语义基础；继续保留 v2 只读兼容测试 |
-| `LegacyDataBridge` 与旧数据适配器 | 部分保留 | 无障碍旧实现已在迁移完成后删除；Phigros 与抽卡适配器继续服务旧存储，完成迁移与回滚测试后删除 |
+| `LegacyDataBridge` 与旧数据适配器 | 删除 | 迁移验收完成后从公开 SDK 删除；数据管理仅使用宿主私有 DatasetBridge |
 | Dataset ID、格式版本、依赖、敏感标记、恢复模式 | 保留语义 | 移入平台无关 schema，不保留 Android `Activity` 接口 |
 | staging generation、校验后切换、回滚思想 | 保留语义并重写 | 由 StorageService 实现，不移植原 `PluginDataManager` 代码 |
 | Runtime Backend 抽象 | 保留概念 | 先实现 Web/Worker Backend；隔离进程或独立 UID 是未来可替换 Backend |
@@ -444,10 +444,9 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 
 ### 阶段 5：数据运行时与工具迁移
 
-实现状态（2026-08-26）：框架部分已完成 KV/blob、Keystore AES-GCM SecretStore、chunked Dataset、staging generation、
-原子切换／回滚和 `.atsbackup` v3 adapter 已完成；无障碍授权完成首个单向迁移纵切。Phigros 与抽卡
-分析按用户当前优先级暂缓业务迁移，继续使用冻结的 API1 Dataset adapter；后续按 1.9 发布窗逐个完成业务等价迁移，不能在没有空环境
-恢复和降级证据时仅改包格式冒充迁移完成。
+实现状态（2026-09-08）：KV/blob、Keystore AES-GCM SecretStore、chunked Dataset、staging generation、
+原子切换／回滚和 `.atsbackup` v3 adapter 已完成；无障碍、Phigros 与抽卡插件均已完成 format v3
+业务迁移，并通过空环境恢复、降级、实体设备迁移和主要业务校验。
 
 交付物：
 
@@ -460,9 +459,9 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 
 ### 阶段 6：开发体验与旧运行时退役
 
-实现状态（2026-08-24）：`ats create`、`ats dev`、Capability mock、自动刷新、Android Debug 同源代理、
-契约测试和全量构建门禁已完成。API1 与 Bridge 的删除尚未到达剩余插件全部迁移并通过恢复／降级测试的验收门槛，
-因此当前正确状态是冻结而非提前删除。
+实现状态（2026-09-08）：`ats create`、`ats dev`、Capability mock、自动刷新、Android Debug 同源代理、
+契约测试和全量构建门禁已完成。API1 与 Bridge 的退出门槛已由两个剩余插件的恢复、业务、降级和实体设备测试满足；
+宿主停止安装和装载 `plugin.apk`，SDK 不再发布 Tool/Host/Bridge 接口。
 
 交付物：
 
@@ -484,9 +483,9 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 - 后台：没有通过常驻 WebView 模拟后台任务的实现。
 - 数据：敏感 Dataset 默认受保护，显式明文必须二次确认；导入支持 staging、校验和回滚。
 - 发布：组件仓库分别测试、构建和发布，外层只锁定已验证组合。
-- 兼容：现有 API1 正式版在迁移完成前持续可用。
+- 兼容：历史归档清单仍可识别，但 API1 可执行载荷不再恢复。
 - 平台：当前产物只有 Android；公共协议中没有 Android 类和物理路径。
-- 安全表述：普通 V3 Tool 的未授权能力是 Router 强制边界；API1／trusted-provider 是全信任原生代码，不能混为一谈。
+- 安全表述：普通 V3 Tool 的未授权能力是 Router 强制边界；`trusted-provider` 是唯一全信任原生插件类型。
 
 ## 14. 冻结架构决策
 
@@ -500,9 +499,9 @@ CI 保管的 publisher 私钥签名，不能用本地 Debug key 代替发布验�
 | 后台任务 | 持久调度使用 WorkManager；Provider task 与 JavaScript worker 共用任务历史、约束、超时、有界重试和并发策略，WebView 不承担后台执行。 |
 | WASM/WIT | WASM 不是首版必需项；通过体积、中断、API 24/26 和引擎故障域实测后才能启用，WIT 不暴露 Android、文件系统、socket 或宿主内存。 |
 | 数据 | KV、blob、Secret 与 Dataset 按插件和 generation 隔离，写入使用 staging/校验/原子切换；Secret 绑定 AAD，备份沿用 `.atsbackup` v3。已交付的 `runtime-v2` 磁盘命名空间仅为数据兼容保留。 |
-| API1 退出 | API1 冻结为兼容与迁移接口；所有剩余插件完成迁移，并通过旧数据导出、空环境恢复、业务校验和降级演练后即可删除旧代码，不再附加版本数量或日历时间要求。 |
+| API1 退出 | Phigros 与抽卡迁移验收完成后，API1 Tool/Host/Bridge 接口和外部 APK 装载已删除；只保留历史归档的非执行识别。 |
 | UI | format v3 只有一个 `ui/*.json` 声明入口；简单页面由 Host renderer 绘制，复杂页面由 `webview` renderer 绘制，两者共享宿主主题、外壳和状态语义。 |
-| 权限 | 私有存储等运行基础不展示开关；普通插件的敏感 Capability 默认待决定并在每次调用重新检查，撤销会取消在途调用和后台任务。API1 与 trusted-provider 不伪装成可沙箱化。 |
+| 权限 | 私有存储等运行基础不展示开关；普通插件的敏感 Capability 默认待决定并在每次调用重新检查，撤销会取消在途调用和后台任务。trusted-provider 不伪装成可沙箱化。 |
 | Shizuku | `shizuku_auth` 是与其他插件并列的独立签名仓库；同一包提供授权 UI、主页组件和窄 Capability，宿主只保留 Android/Shizuku 生命周期所需的最小桥。 |
 
 后续若设备证据与这些决定冲突，必须在同一变更中更新本节、相关实现章节、迁移影响和契约 fixture；不得只让 Kotlin/TypeScript 实现偏离文档。

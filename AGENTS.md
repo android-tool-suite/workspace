@@ -51,13 +51,19 @@ android-tool-suite/
 
 首次检出使用 `git clone --recurse-submodules`；已有检出使用 `git submodule sync --recursive` 和 `git submodule update --init --recursive`。不要把子模块改回 SSH URL，也不要直接提交只有外层 gitlink 更新、却没有对应远端子仓库提交的状态。
 
+## 当前进度交接
+
+- 进行中任务的本地交接文档：`temp/handoff-2026-09-08-api1-exit.md`（`temp/` 已被 Git 忽略，**不提交**）。它记录 P0.3「正式发布与 API1 退出」的改动概况、已完成的构建与双设备验证证据，以及剩余发布步骤。
+- 当前跨仓库改动已按用户授权分仓库本地提交，尚未推送或发布；外层 gitlink 保持原集成基线，待组件提交推送并验证后再更新。
+- 该交接文档在任务收口、相关改动提交后删除，并同步移除本节。
+
 ## 架构边界
 
 - `app/app` 负责宿主界面、插件安装与运行时、Capability 权限、Shizuku 最小 bootstrap 及 Debug ADB Receiver。`shizuku_auth` 是合并授权 UI 与 Native Provider 的独立 format v3 包，不在内置插件注册表中。
 - `app/plugin-sdk` 是宿主与外部插件之间的公开边界。插件 API、清单模型、主页组件协议和共享设计系统应放在这里，不要让外部插件直接依赖主体工程源码。
-- 每个外部插件都是独立 Gradle 工程，不得添加指向 `app` 的 Gradle project 依赖。包含 Native Provider 或 API1 代码的插件通过 Maven 坐标 `com.androidtoolsuite:plugin-sdk` 编译；纯 Web/Worker format v3 插件可以是无需 Android SDK 的打包工程。
-- format v3 普通插件使用统一声明式 UI（若有 UI），文档可选择 Host 或 WebView renderer；也可通过必需的受限 Worker 提供 Capability，但不得声明或夹带原生 Provider。只有必须以宿主身份与系统交互的实现使用签名的 `trusted-provider`；该类型仍可贡献 UI、Tool、主页组件和 Worker。旧 format v1/v2 才包含 `plugin.apk`；继续使用各仓库现有生成与打包任务，不要手工拼装发布包。
-- 普通 format v3 Tool 的能力调用必须经过 Capability Router，未授权调用应被真正拒绝；API1 与 `trusted-provider` 是同进程可信代码，不要把插件级开关描述成对它们的安全沙箱。不得记录或展示 SessionToken、Shizuku 敏感输出等凭据。
+- 每个外部插件都是独立 Gradle 工程，不得添加指向 `app` 的 Gradle project 依赖。包含 Native Provider 的 `trusted-provider` 通过 Maven 坐标 `com.androidtoolsuite:plugin-sdk` 编译；纯 Web/Worker format v3 插件可以是无需 Android SDK 的打包工程。
+- format v3 普通插件使用统一声明式 UI（若有 UI），文档可选择 Host 或 WebView renderer；也可通过必需的受限 Worker 提供 Capability，但不得声明或夹带原生 Provider。只有必须以宿主身份与系统交互的实现使用签名的 `trusted-provider`；该类型仍可贡献 UI、Tool、主页组件和 Worker。旧 format v1/v2 `plugin.apk` 只允许历史归档识别，不再安装或执行；继续使用各仓库现有生成与打包任务，不要手工拼装发布包。
+- 普通 format v3 Tool 的能力调用必须经过 Capability Router，未授权调用应被真正拒绝；`trusted-provider` 是同进程可信代码，不要把插件级开关描述成对它的安全沙箱。不得记录或展示 SessionToken、Shizuku 敏感输出等凭据。
 
 ## 开发环境与构建
 
@@ -134,7 +140,7 @@ gradle -p plugins\gacha-analysis `
 - 每次准备提交子仓库前，都要把当前版本字段与该子仓库 `HEAD` 比较。如果版本号发生变化，必须先完善对应 `CHANGELOG.md`：写明新版本、日期，并完整归纳该版本的新增、优化、修复、兼容性或升级注意事项，然后才能提交。如果版本号没有变化，则再次确认本次修改确实属于无需提升版本的情形。
 - 如果工作区开始时已有未提交修改，应按整个待提交改动判断版本和更新日志，不能只评估本轮新增的几行。
 - 修改插件导入、更新或删除流程时，保持文件更新原子性，不得留下半写入的插件包或清单。
-- 修改 Phigros 的 RKS、存档解析、缓存或历史逻辑时，在 `plugins/phigros-advisor/src/test` 添加或更新纯 JVM 测试；不得用真实 SessionToken 作为测试数据。
+- 修改 Phigros 的 RKS、存档解析、缓存或历史逻辑时，在 `plugins/phigros-advisor/src/test-js` 添加或更新 Node 契约测试；不得用真实 SessionToken 作为测试数据。
 
 ## 验证与设备测试
 

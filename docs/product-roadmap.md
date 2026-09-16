@@ -8,7 +8,7 @@
 
 Android Tool Suite（ATS）定位为“单一宿主中的个人工具平台”：用户只安装一个主应用，在其中安装、运行、备份和更新多个工具；所有工具采用统一声明式 UI，简单页面使用 Host renderer，复杂页面使用隔离 WebView renderer。普通插件只能通过用户可管理的稳定 Capability API 工作；需要 Android 或 Shizuku 宿主身份的插件使用签名、全信任的 `trusted-provider` 类型，但仍可同时贡献普通插件功能。
 
-插件运行时已经把新插件边界从 Android AAR／Compose 改为平台无关契约；Phigros 与抽卡的 API1 同进程实现继续承担可用产品和旧数据迁移职责。AI 开发体验、ATS 自有发布平台和跨平台宿主仍是独立工作流，不作为运行时迁移的附带功能塞进同一验收里程碑。
+插件运行时已经把普通插件边界从 Android AAR／Compose 改为平台无关契约；Phigros 与抽卡均已迁移到 format v3，API1 可执行路径退出。AI 开发体验、ATS 自有发布平台和跨平台宿主仍是独立工作流，不作为运行时迁移的附带功能塞进同一验收里程碑。
 
 ## 2. 优先级与依赖
 
@@ -27,7 +27,7 @@ Android Tool Suite（ATS）定位为“单一宿主中的个人工具平台”�
 
 ### 3.1 插件运行时（P0）
 
-以 [plugin-runtime-architecture.md](plugin-runtime-architecture.md) 为唯一架构与迁移文档。清单、Host/WebView renderer、Capability 权限、全信任 Provider、Storage/Secret/Scheduler、外置 Shizuku 和首个 Web/Worker 插件均已落地；当前 P0 只剩 Phigros、抽卡迁移与 API1 退出验收。
+以 [plugin-runtime-architecture.md](plugin-runtime-architecture.md) 为唯一架构与迁移文档。清单、Host/WebView renderer、Capability 权限、全信任 Provider、Storage/Secret/Scheduler、外置 Shizuku、Phigros 与抽卡迁移及 API1 退出实现均已落地；当前只剩全量发布验收与正式发布，P0.4 性能工作按用户要求暂缓。
 
 首轮外部调研与项目映射见 [plugin-runtime-research-report.md](plugin-runtime-research-report.md)。冻结决策已合并到架构文档；UI 和后台继续使用不同执行器，API 24–25 不用隐藏 WebView 补齐 JavaScript worker。
 
@@ -49,7 +49,7 @@ Android Tool Suite（ATS）定位为“单一宿主中的个人工具平台”�
 | --- | --- | --- |
 | 已正式发布的 Migration Bridge 与统一 `.atsbackup` v3 | 保留为迁移和数据管理基线 | 以 1.6.1 同包名正式版读取现有私有数据；剩余插件完成迁移并通过迁移、恢复、业务与降级测试后退役桥接 API |
 | Dataset ID、依赖、格式版本、恢复模式和保护方式 | 保留语义 | 固化到平台无关 schema，替换 `Activity` 接口 |
-| API1 插件的导入、导出、删除适配器 | 临时保留 | 只服务旧存储；不演化为新 Runtime 的永久存储 API |
+| API1 插件的导入、导出、删除适配器 | 已删除 | 历史归档仅识别非执行元数据，不再安装或装载 `plugin.apk` |
 | Host + 通用 Sandbox 双 APK、远程 Compose UI | 放弃实现 | 原型分支只保留研究证据；当前实现改用声明式 UI、隔离 WebView 和可替换 Backend |
 | Capability Broker、数据 staging、回滚思想 | 重新设计 | 以版本化高层契约和宿主管理的服务重写 |
 | AndroidX WebView、JavaScriptEngine 与 WorkManager | 采用平台 Adapter | WebView 只渲染可见 UI；JavaScriptEngine 仅在 API 26+ 且设备支持时执行 worker；WorkManager 保存持久调度 |
