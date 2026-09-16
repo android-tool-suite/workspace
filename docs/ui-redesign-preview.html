@@ -360,6 +360,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 0 24px 88px; }
 .tabs { display: flex; gap: 4px; padding: 0 14px; border-bottom: 1px solid var(--outline-variant); }
 .tab { padding: 9px 11px 8px; color: var(--on-surface-variant); font-size: 10.5px; }
 .tab.active { color: var(--primary); font-weight: 750; border-bottom: 2px solid var(--primary); }
+.phi-sample-level { color: #8A4BA8; }
+.phi-sample-rks { color: #B07206; }
+body.dark .phi-sample-level { color: #CFA3E8; }
+body.dark .phi-sample-rks { color: #F0C060; }
 .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
 .metric { text-align: center; }
 .metric small { display: block; color: var(--on-surface-variant); font-size: 8px; }
@@ -704,7 +708,15 @@ td:first-child { font-weight: 750; }
           <div class="rule"><b>5</b><span>导入、导出、删除等维护动作放到后部。</span></div>
         </div>
         <div class="baseline-note" style="margin-top:24px"><strong>领域色的边界</strong>稀有度、谱面难度可保留插件自有色；成功、警告、危险和信息直接使用 <code>SuiteSemantic.current</code>。所有颜色都要配文字或图标。</div>
-        <div class="baseline-note"><strong>主题的边界</strong>插件通过 <code>composePluginView</code> 继承宿主主题。不要自行读取系统深色状态后覆盖用户在应用中的选择。</div>
+        <div class="baseline-note"><strong>主题的边界</strong>Compose 页面通过 <code>composePluginView</code>、Web 页面通过宿主注入的 <code>--ats-*</code> token 继承宿主主题。不要自行读取系统深色状态后覆盖用户在应用中的选择。</div>
+        <div class="baseline-note"><strong>Web 列表与操作</strong>首行显示数据摘要和文字“刷新”，不重复插件名称。抽卡采用横向账号标签与卡池选择，页签使用下划线选中态；Phigros 合并玩家与 RKS 摘要，成绩使用紧凑字段卡。抽卡记录每页 50 条；Phigros 成绩与定数每页 40 项。筛选作用于完整数据，空结果保留筛选入口。</div>
+        <div class="sample-card"><div class="row"><button class="btn outlined" type="button" disabled>上一页</button><span class="meta grow" style="text-align:center">1 / 3</span><button class="btn outlined" type="button">下一页</button></div></div>
+        <div class="baseline-note"><strong>图片与时间线</strong>Phigros 生成图片后先预览，再选择保存位置；历史节点默认折叠，点击摘要后查看变化。抽卡卡池可展开目标星级时间线，分析来源按账号保存。</div>
+        <div class="baseline-note"><strong>短暂反馈</strong>Web 操作结果固定在当前视口底部，可关闭；普通反馈 5 秒、错误反馈 10 秒后消失。使用统一反色表面，无侧边色条和绿色底块。</div>
+        <div class="sample-card" style="background:var(--on-surface);color:var(--surface)"><div class="row"><span class="grow">链接已就绪，可以获取记录</span><button class="btn" type="button" style="background:transparent;color:inherit">关闭</button></div></div>
+        <div class="baseline-note"><strong>插件标签切换</strong>横向跟手滑动或点按标签都有横向过渡，约三成页宽可切换，短拖回弹，指示器同步。页内纵向滚动位置保留，输入框、弹窗和卡池横向列表不触发误翻页。</div>
+        <div class="baseline-note"><strong>获取流程</strong>链接输入、“获取新记录”和次要操作“刷新全部记录”在同一卡片。完成后保留内存链接，显示本次新增／检查数量，主动点击“查看记录”再跳转；链接可清除或更换，不自动清空。完整刷新保留本地旧记录。日志范围默认系统保留的全部，扫码可取消，退出需确认。</div>
+        <div class="sample-card"><div class="row"><strong class="grow">示例谱面</strong><span class="phi-sample-level">IN 15.0</span></div><div class="row" style="margin-top:12px"><div class="grow"><small>推分 ACC</small><br><strong class="success-text">99.1234%</strong></div><div class="grow" style="border-left:1px solid var(--outline-variant);padding-left:12px"><small>单曲 RKS</small><br><strong class="phi-sample-rks">14.5234</strong></div></div></div>
       </article>
     </div>
   </section>
