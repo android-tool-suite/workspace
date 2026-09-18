@@ -5,3 +5,6 @@
 /temp/
 /workspace/
 /LOCAL-ENVIRONMENT.md
+
+# Local GUI emulator state; never part of the integration source.
+/emulator/
