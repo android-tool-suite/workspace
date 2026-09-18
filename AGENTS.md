@@ -24,7 +24,7 @@ android-tool-suite/
 │  ├─ docs/                       插件包格式与 ADB 调试文档
 │  ├─ tools/adb-debug.ps1         Debug APK 的 ADB 操作封装
 │  └─ artifacts/                  android-tool-suite-debug.apk
-├─ plugin-registry/               正式/调试插件索引、签名与 Pages 展示页
+├─ plugin-registry/               正式插件索引、签名与 Pages 展示页
 └─ plugins/
    ├─ shizuku-auth/               Shizuku 授权与全信任 Provider 插件仓库
    │  └─ artifacts/               shizuku-auth.atsplugin
@@ -54,8 +54,7 @@ android-tool-suite/
 ## 分支与发布
 
 - 主分支为 `main`，组件日常开发可以直接在各自的 `main` 上进行；需要隔离并行工作或单独评审时，再按需创建 `codex/*` 分支，不要求长期维护固定用途的开发分支。历史存档分支按其保留目的管理，不作为日常开发入口。
-- 普通 CI 只测试并上传构建产物。Debug 必须手动推送 `debug-v<版本号>` 标签，正式版使用 `v<versionName>`；不再自动创建或移动滚动 `debug`。
-- 仅在最新 Debug 验证成功后清理旧 Debug Release 和对应 tag，保留正式版和 SDK 标签；详细步骤见 `docs/development/releasing.md`。
+- 普通 CI 只测试并上传构建产物；Debug 仅用于本地构建和 ADB 安装，不发布远程 Debug Release 或调试索引。正式版使用 `v<versionName>` 标签，SDK 使用独立标签；详细步骤见 `docs/development/releasing.md`。
 
 ## 架构边界
 
