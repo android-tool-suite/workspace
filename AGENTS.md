@@ -51,11 +51,11 @@ android-tool-suite/
 
 首次检出使用 `git clone --recurse-submodules`；已有检出使用 `git submodule sync --recursive` 和 `git submodule update --init --recursive`。不要把子模块改回 SSH URL，也不要直接提交只有外层 gitlink 更新、却没有对应远端子仓库提交的状态。
 
-## 当前进度交接
+## 分支与发布
 
-- 进行中任务的本地交接文档：`temp/handoff-2026-09-08-api1-exit.md`（`temp/` 已被 Git 忽略，**不提交**）。它记录 P0.3「正式发布与 API1 退出」的改动概况、已完成的构建与双设备验证证据，以及剩余发布步骤。
-- 当前跨仓库改动已按用户授权提交并推送到各仓库的 `codex/*` 分支，外层 gitlink 已对齐验证后的组件提交；尚未合并到 `main` 或发布。
-- 该交接文档在任务收口、相关改动提交后删除，并同步移除本节。
+- 主分支为 `main`，日常开发使用 `codex/performance-optimization`、`codex/runtime-development`、`codex/ui-optimization`；已有 `*-archive` 存档分支保留。
+- 普通 CI 只测试并上传构建产物。Debug 必须手动推送 `debug-<完整提交 SHA>` 标签，正式版使用 `v<versionName>`；不再自动创建或移动滚动 `debug`。
+- 仅在最新 Debug 验证成功后清理旧 Debug Release 和对应 tag，保留正式版和 SDK 标签；详细步骤见 `docs/releasing.md`。
 
 ## 架构边界
 

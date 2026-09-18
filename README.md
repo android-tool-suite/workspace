@@ -126,7 +126,7 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和四个插件都支持两个发布通道：`main` 分支 CI 成功后创建 `debug-<完整提交 SHA>` 历史快照并更新滚动 `debug` 预发布，`v<versionName>` 标签则发布不可变的正式 Release。两类发布都包含固定命名的二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。
+主体和四个插件都支持两个发布通道：手动推送 `debug-<完整提交 SHA>` 标签发布不可变 Debug，`v<versionName>` 标签发布正式 Release。普通 CI 只验证构建，不再创建滚动 `debug`；两类发布都包含二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。分支、标签和旧 Debug 清理流程见 [发布指南](docs/releasing.md)。
 
 运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
 
