@@ -10,18 +10,18 @@
 
 ## 手动 Debug 发布
 
-组件 `ci.yml` 只验证并上传 Actions 构建产物。推送 main、开发分支或手动运行 CI 均不会创建 Debug Release。只有显式推送 `debug-<完整提交 SHA>` 标签触发 `debug.yml`：
+组件 `ci.yml` 只验证并上传 Actions 构建产物。推送 main、开发分支或手动运行 CI 均不会创建 Debug Release。只有显式推送 `debug-v<版本号>` 标签触发 `debug.yml`：
 
 ```powershell
 # 在需要发布的组件仓库内执行，先确认 main 和验证结果。
 git switch main
 git pull --ff-only
-$commit = git rev-parse HEAD
-git tag "debug-$commit" $commit
-git push origin "refs/tags/debug-$commit"
+$tag = "debug-v1.8.0" # 示例：必须与当前组件 versionName 一致
+git tag $tag
+git push origin "refs/tags/$tag"
 ```
 
-发布工作流严格核对标签与实际构建提交，重新运行组件构建／测试，生成元数据和 SHA-256 校验和，先上传草稿资产，再公开预发布，最后发送索引更新事件。宿主使用稳定 Debug 签名；Shizuku Provider 使用发布者签名。标签不移动、资产不覆盖，不再创建滚动 `debug` 标签。
+发布工作流严格核对标签版本与组件版本，并在元数据中记录实际构建提交，重新运行组件构建／测试，生成元数据和 SHA-256 校验和，先上传草稿资产，再公开预发布，最后发送索引更新事件。宿主使用稳定 Debug 签名；Shizuku Provider 使用发布者签名。标签不移动、资产不覆盖，不再创建滚动 `debug` 标签。
 
 跨组件发布先将宿主和索引主分支更新到验证后的提交，再发布插件，确保 Shizuku 的 SDK／CLI 来源可获取。失败时检查 Actions 日志；若仅索引通知失败，手动运行索引仓库的 `pages.yml`，无需重新创建 Release。
 

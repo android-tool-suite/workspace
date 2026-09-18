@@ -54,7 +54,7 @@ android-tool-suite/
 ## 分支与发布
 
 - 主分支为 `main`，日常开发使用 `codex/performance-optimization`、`codex/runtime-development`、`codex/ui-optimization`；已有 `*-archive` 存档分支保留。
-- 普通 CI 只测试并上传构建产物。Debug 必须手动推送 `debug-<完整提交 SHA>` 标签，正式版使用 `v<versionName>`；不再自动创建或移动滚动 `debug`。
+- 普通 CI 只测试并上传构建产物。Debug 必须手动推送 `debug-v<版本号>` 标签，正式版使用 `v<versionName>`；不再自动创建或移动滚动 `debug`。
 - 仅在最新 Debug 验证成功后清理旧 Debug Release 和对应 tag，保留正式版和 SDK 标签；详细步骤见 `docs/releasing.md`。
 
 ## 架构边界
@@ -134,6 +134,7 @@ gradle -p plugins\gacha-analysis `
 - 如果实际 Compose 设计系统、已经交付的宿主行为、UI 规范正文或 HTML 样例之间出现差异，先以当前公开 SDK token／组件和已交付行为核实设计基线，再在同一次相关修改中同步更新规范与预览，避免文档继续描述未实施方案。
 - 修改 `plugin-sdk` 的公开 API 时，检查二进制/源码兼容性，同时验证主体和四个插件。发布 SDK 变更时更新 `app/gradle.properties` 中的 `pluginSdkVersion`，并按需要同步插件的 `atsPluginSdkVersion`。
 - 每个子仓库独立维护根目录下的 `CHANGELOG.md`：`app/CHANGELOG.md`、`plugins/shizuku-auth/CHANGELOG.md`、`plugins/accessibility-grant/CHANGELOG.md`、`plugins/phigros-advisor/CHANGELOG.md`、`plugins/gacha-analysis/CHANGELOG.md`。插件仓库缺少该文件时，在下一次需要提升版本的修改中创建。更新日志只记录该子仓库的变化，不把多个仓库的发布内容混写在一起。
+- 应用和插件的更新日志只记录产品本身的变化；分支整理、CI、标签命名、发布流程等仓库与开发维护改动写入提交说明或开发文档，不写入 `CHANGELOG.md`。
 - 版本提升以发布状态为准，不以是否已经提交为准。当前版本尚未发布时，后续修改可以继续沿用该版本号和 `versionCode`，并将变更合并到同一版本的 `CHANGELOG.md`；已提交或推送到开发分支不等于已发布。当前版本已经发布时，修复、功能、依赖或 SDK/API 变化、用户可感知的 UI/交互变化以及产物行为变化应在提交前提升版本；纯文档、纯测试、注释/格式化、仓库元数据或不影响运行行为与交付产物的内部整理可以不提升版本。无法确定发布状态时，先核实发布记录。
 - Debug、预发布和正式版发布均算已发布，包括滚动 Debug 渠道和历史快照；核实时检查发布产物对应的版本号与 `versionCode`，不能仅凭没有正式版本标签判断尚未发布。本地构建或设备安装本身不算发布。
 - 主体版本位于 `app/app/build.gradle` 的 `versionCode`、`versionName`；插件版本位于各自 `build.gradle` 的 `pluginVersionName`、`versionCode`。每次发布版本都递增整数 `versionCode`，并按改动性质更新 `versionName`。`manifest.template.json` 的版本由构建任务注入，不要维护第二份硬编码版本。
