@@ -1,9 +1,8 @@
 # Android Tool Suite UI 设计模式规范与实现指南
 
 本文定义 Android Tool Suite 宿主应用与插件共同遵循的 UI 设计语言、页面模式和交互规则。
-文件名沿用 `ui-redesign-plan.md` 以保留既有链接，但它不再是一份待实施的重设计计划。
 
-配套样例：[ui-redesign-preview.html](ui-redesign-preview.html)。HTML 用于查看浅色／深色配色、
+配套样例：[ui-preview.html](ui-preview.html)。HTML 用于查看浅色／深色配色、
 核心组件、五个一级页面、插件详情和状态反馈；它是可离线打开的独立本地 HTML，内嵌图标并保留许可，
 不依赖 Codex 运行时或在线 CDN。页面中的数据与外部操作均为演示，实际组件与业务状态以代码为准。
 

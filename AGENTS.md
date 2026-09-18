@@ -53,9 +53,9 @@ android-tool-suite/
 
 ## 分支与发布
 
-- 主分支为 `main`，日常开发使用 `codex/performance-optimization`、`codex/runtime-development`、`codex/ui-optimization`；已有 `*-archive` 存档分支保留。
+- 主分支为 `main`，组件日常开发可以直接在各自的 `main` 上进行；需要隔离并行工作或单独评审时，再按需创建 `codex/*` 分支，不要求长期维护固定用途的开发分支。历史存档分支按其保留目的管理，不作为日常开发入口。
 - 普通 CI 只测试并上传构建产物。Debug 必须手动推送 `debug-v<版本号>` 标签，正式版使用 `v<versionName>`；不再自动创建或移动滚动 `debug`。
-- 仅在最新 Debug 验证成功后清理旧 Debug Release 和对应 tag，保留正式版和 SDK 标签；详细步骤见 `docs/releasing.md`。
+- 仅在最新 Debug 验证成功后清理旧 Debug Release 和对应 tag，保留正式版和 SDK 标签；详细步骤见 `docs/development/releasing.md`。
 
 ## 架构边界
 
@@ -126,10 +126,18 @@ gradle -p plugins\gacha-analysis `
 
 这些 `artifacts/` 目录虽然被 Git 忽略，仍是供安装和验收使用的正式构建产物；不要仅因为它们被忽略就当成垃圾删除。
 
+## 文档维护
+
+- 外层长期文档只维护跨仓库统一规范、架构与数据契约、可复用操作流程、设计样例和未来规划；分类入口见 `docs/README.md`。
+- 长期规范与规划不记录当前分支清单、提交号、发布状态快照或任务进度。确有协作价值的短期提案、调研或验证材料可放在 `docs/working-notes/`，注明适用范围和清理条件；无须保留的记录直接删除，不建立任务报告归档树。
+- 产品版本历史留在对应组件的 `CHANGELOG.md`；任务进展与验证证据放在 Issue、PR、CI 或发布附件，本地临时记录放在被忽略的 `temp/`。
+- 未来规划写清目标、依赖、范围和验收条件，不维护完成勾选、暂停日期或当次执行结果。研究结论只有形成长期决策时才提炼进架构规范。
+- 文档变化同步检查入口和交叉链接；规范与代码有差异时核对实现，不能仅删除状态词就把未实施设想改写成既定能力。
+
 ## 修改规则
 
 - Java/Kotlin 均使用 Java 17 目标；新界面优先沿用现有 Compose 架构。
-- 宿主和插件的 UI 设计、实现与评审必须同时参考根目录的 `docs/ui-redesign-plan.md` 和 `docs/ui-redesign-preview.html`：前者是设计模式、交互和评审规范正文，后者是浅色／深色、宿主页、插件页、组件与响应式布局的样例示范。不得把 HTML 当成脱离规范正文的像素模板，也不得继续采用两份文件中已明确放弃的旧方案。
+- 宿主和插件的 UI 设计、实现与评审必须同时参考根目录的 `docs/design/ui-guidelines.md` 和 `docs/design/ui-preview.html`：前者是设计模式、交互和评审规范正文，后者是浅色／深色、宿主页、插件页、组件与响应式布局的样例示范。不得把 HTML 当成脱离规范正文的像素模板，也不得继续采用两份文件中已明确放弃的旧方案。
 - 宿主和插件界面应复用 `app/plugin-sdk/.../SuiteDesignSystem.kt`、`SuiteTokens.kt`、`SuiteSettings.kt`、`SuiteStates.kt` 及现有 Compose 组件，保持所有页面、空态、加载态、错误态、拖拽态和弹窗的视觉与交互一致，不要在单个插件中复制一套相近但不同的设计 token。`UiKit.java` 仅为已有第三方插件的二进制兼容保留，新界面不得使用。
 - 如果实际 Compose 设计系统、已经交付的宿主行为、UI 规范正文或 HTML 样例之间出现差异，先以当前公开 SDK token／组件和已交付行为核实设计基线，再在同一次相关修改中同步更新规范与预览，避免文档继续描述未实施方案。
 - 修改 `plugin-sdk` 的公开 API 时，检查二进制/源码兼容性，同时验证主体和四个插件。发布 SDK 变更时更新 `app/gradle.properties` 中的 `pluginSdkVersion`，并按需要同步插件的 `atsPluginSdkVersion`。

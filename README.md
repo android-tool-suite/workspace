@@ -22,18 +22,17 @@
 
 ## 文档入口
 
-宿主应用和所有插件的新增、重构与评审应共同使用以下两份文件作为 UI 规范：
+完整分类和维护边界见 [项目文档索引](docs/README.md)：
 
-- [`docs/ui-redesign-plan.md`](docs/ui-redesign-plan.md)：设计模式规范正文，定义信息架构、导航、视觉 token、共享组件、状态反馈、现行交互、文案、无障碍和评审清单。
-- [`docs/ui-redesign-preview.html`](docs/ui-redesign-preview.html)：与规范配套的可视化样例和预览，可在浏览器中切换浅色／深色并查看宿主页、插件页、组件及响应式布局。
-- [`docs/plugin-runtime-architecture.md`](docs/plugin-runtime-architecture.md)：现行插件类型、权限、数据、后台任务、Provider 信任边界和剩余迁移计划。
-- [`docs/product-roadmap.md`](docs/product-roadmap.md)：插件运行时、AI 开发、发布平台与跨平台的独立优先级和依赖关系。
-- [`docs/follow-up-task-list.md`](docs/follow-up-task-list.md)：按 P0–P3 排序的后续执行清单、依赖和完成条件。
-- [`docs/ai-plugin-development-plan.md`](docs/ai-plugin-development-plan.md)：Developer Agent、AI Provider、草稿运行时与人工批准边界。
-- [`docs/publication-platform-plan.md`](docs/publication-platform-plan.md)：私有草稿、unlisted、公共社区和 GitHub Adapter 的分阶段发布平台。
-- [`docs/data-management.md`](docs/data-management.md)：统一 `.atsbackup` v3、旧数据 Dataset 映射、删除边界与迁移验收矩阵。
+- `docs/architecture/`：运行时架构与数据契约。
+- `docs/development/`：开发、集成与发布流程。
+- `docs/design/`：UI 规范及离线交互预览。
+- `docs/plans/`：路线图和专题规划。
+- `docs/working-notes/`：确有协作价值、具有清理条件的短期材料。
 
-Markdown 负责说明规则与适用边界，HTML 负责示范规则落地后的视觉效果；两者应同时参考，不能只复制样例外观而忽略交互、状态和无障碍要求。若实际 Compose 设计系统、规范正文与预览出现差异，应先以 `app/plugin-sdk` 中当前公开的 token／组件和已交付宿主行为核实事实，再同步更新这两份文档。
+修改或评审界面时，同时参考 [UI 设计规范](docs/design/ui-guidelines.md) 和 [交互预览](docs/design/ui-preview.html)。若公开 SDK token／组件、宿主行为和文档出现差异，应核实实现并同步修正规范与预览。
+
+产品历史由各组件 `CHANGELOG.md` 管理；任务进度和验证证据优先由 Issue、PR、CI 和发布附件承载，不写入长期规范。
 
 ## 获取工作区
 
@@ -55,7 +54,7 @@ git submodule update --init --recursive
 git clone https://github.com/android-tool-suite/plugin-phigros-advisor.git
 ```
 
-运行时索引已经作为独立子模块固定在 `plugin-registry/`。只维护索引生成器时，也可以单独克隆它：
+运行时索引作为独立子模块管理，位于 `plugin-registry/`。只维护索引生成器时，也可以单独克隆它：
 
 ```powershell
 git clone https://github.com/android-tool-suite/plugin-registry.git
@@ -126,7 +125,7 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和四个插件都支持两个发布通道：手动推送 `debug-v<版本号>` 标签发布不可变 Debug，`v<versionName>` 标签发布正式 Release。普通 CI 只验证构建，不再创建滚动 `debug`；两类发布都包含二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。分支、标签和旧 Debug 清理流程见 [发布指南](docs/releasing.md)。
+主体和四个插件都支持两个发布通道：手动推送 `debug-v<版本号>` 标签发布不可变 Debug，`v<versionName>` 标签发布正式 Release。普通 CI 只验证构建，不再创建滚动 `debug`；两类发布都包含二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。分支、标签和旧 Debug 清理流程见 [发布指南](docs/development/releasing.md)。
 
 运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
 
