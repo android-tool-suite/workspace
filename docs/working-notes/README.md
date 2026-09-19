@@ -4,6 +4,8 @@
 
 ## 材料入口
 
+- [下一代交互预览](ui-next-preview.html)：可离线打开的完整设计提案；[源码与范围说明](ui-next-preview/README.md) 标明主分支对齐基线、演示边界及清理条件。
+
 - [运行时发布前待核事项](runtime-release-readiness.md)：从旧任务清单筛出的待核问题，区分源码、已有构建记录和仍缺少的验收证据。
 - [运行时选型调研复核](runtime-research-recheck.md)：核对仍有效的 Android 机制，标明旧竞品比较和候选后端的证据边界。
 
