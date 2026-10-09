@@ -40,11 +40,13 @@ function go(route,{replace=false,root=false}={}){
  if(S.route===route&&!replace){render();return;}
  rememberRuntimeView();S.scrolls[S.route]=ui.content.scrollTop;S.sortMode=null;
  const stack=root?[]:replace?S.stack:[...S.stack,S.route];
- S.route=route;S.stack=stack;visitRuntimeRoute(route);if(root&&['home','tools','plugins'].includes(route))S.root=route;S.overlay=null;
+ S.route=route;S.stack=stack;visitRuntimeRoute(route);if(root&&['home','tools','warehouse','settings'].includes(route))S.root=route;S.overlay=null;
  history[replace?'replaceState':'pushState']({atsPreview:true,route,stack:S.stack,root:S.root},'',`#${encodeURIComponent(route)}`);
  render();ui.content.focus({preventScroll:true});
 }
 function back(){
+ if(S.route.startsWith('gacha/account/')&&S.gacha.localNoteDraft){showOverlay('gacha-note-discard');return;}
+ if(S.route==='widgets/editor'&&S.widgetEditor?.dirty){showOverlay('widget-route-discard');return;}
  if(S.overlay){closeOverlay();return;}
  if(/^data\/(export|import|delete)$/.test(S.route)&&S.flow){if(S.flow.step>0){act('flow-previous');return;}requestFlowExit();return;}
  if(S.route==='gacha/analysis'&&JSON.stringify(S.gacha.analysisDraft)!==JSON.stringify(S.gacha.analysis)){showOverlay('discard-analysis');return;}
@@ -52,25 +54,24 @@ function back(){
 }
 function leavePage(){if(S.stack.length)history.back();else if(S.route!==S.root)go(S.root,{replace:true,root:true});else if(S.root!=='home')go('home',{root:true});}
 function showOverlay(kind,params={}){overlayReturnFocus=document.activeElement;S.overlay={kind,...params};renderOverlay();}
-function closeOverlay(){S.overlay=null;renderOverlay();if(overlayReturnFocus?.isConnected)overlayReturnFocus.focus({preventScroll:true});}
+function closeOverlay(force=false){if(!force&&S.overlay?.kind==='widget-config'&&S.overlay.dirty){showOverlay('widget-discard',{previous:S.overlay});return;}S.overlay=null;renderOverlay();if(overlayReturnFocus?.isConnected)overlayReturnFocus.focus({preventScroll:true});}
 function renderOverlay(){
  const o=S.overlay;ui.product.inert=!!o||S.runtime.startupGate;
  if(!o){ui.overlay.innerHTML='';return;}
  const oldFocus=ui.overlay.contains(document.activeElement)?document.activeElement:null;
- const focusSpec=oldFocus?['id','data-check','data-setting','data-action'].map(attr=>[attr,oldFocus.getAttribute(attr)]).find(([,value])=>value):null;
+ const focusSpec=oldFocus?['id','data-check','data-setting','data-action','data-widget-field','data-widget-pool'].map(attr=>[attr,oldFocus.getAttribute(attr)]).find(([,value])=>value):null;
  const view=modalView(o);
  if(view.menu){
   const x=Math.min(Math.max(12,o.x||20),ui.device.clientWidth-230),y=Math.min(Math.max(40,o.y||150),ui.device.clientHeight-340);
   ui.overlay.innerHTML=`<div class="overlay menu-backdrop" data-dismiss="true"><div class="context-menu" role="dialog" aria-modal="true" aria-label="${esc(view.title)}" style="left:${x}px;top:${y}px">${view.body}</div></div>`;
  }else{
-  ui.overlay.innerHTML=`<div class="overlay ${view.sheet?'sheet':''}" ${view.dismissible!==false?'data-dismiss="true"':''}><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">${view.sheet?'<div class="sheet-handle"></div>':''}<div class="row between"><h2 id="modal-title">${view.title}</h2>${ib('close','关闭','modal-close')}</div>${view.body}${view.buttons?`<div class="actions right">${view.buttons}</div>`:''}</section></div>`;
+  ui.overlay.innerHTML=`<div class="overlay ${view.sheet?'sheet':''}" ${view.dismissible!==false?'data-dismiss="true"':''}><section class="modal ${view.scrollBody?'phi-scroll-dialog':''}" role="dialog" aria-modal="true" aria-labelledby="modal-title">${view.sheet?'<div class="sheet-handle"></div>':''}<div class="row between">${view.subtitle?`<div class="grow"><h2 id="modal-title">${view.title}</h2><p class="small muted">${esc(view.subtitle)}</p></div>`:`<h2 id="modal-title">${view.title}</h2>`}${ib('close','关闭','modal-close')}</div>${view.scrollBody?`<div class="phi-dialog-scroll">${view.body}</div>`:view.body}${view.buttons?`<div class="actions right">${view.buttons}</div>`:''}</section></div>`;
  }
  updateGachaSwitchControls();
  requestAnimationFrame(()=>{const retained=focusSpec?[...ui.overlay.querySelectorAll(`[${focusSpec[0]}]`)].find(el=>el.getAttribute(focusSpec[0])===focusSpec[1]):null;const target=retained||ui.overlay.querySelector('[autofocus]')||ui.overlay.querySelector('button,input,select,[tabindex]');target?.focus({preventScroll:true});});
 }
 function tabs(items,active,kind){return `<nav class="tabs" role="tablist" aria-label="${kind==='phi'?'Phigros 页面':'抽卡页面'}">${items.map(([id,label])=>`<button type="button" role="tab" aria-selected="${id===active}" tabindex="${id===active?'0':'-1'}" class="${id===active?'active':''}" data-action="${kind}-tab:${id}">${label}</button>`).join('')}</nav>`;}
 function header(title,subtitle='',actions='',root=false){return `${root?'':ib('back','返回','back')}<div class="header-copy"><h1>${title}</h1>${subtitle?`<small>${subtitle}</small>`:''}</div>${actions}`;}
-function taskButton(){const n=runningJobs().length;return `<button class="icon-btn" aria-label="任务${n?'，'+n+' 项进行中':''}" data-action="go:tasks">${icon('tasks')}${n?`<span class="dot">${n}</span>`:''}</button>`;}
 function appBar(title,subtitle='',actions='',root=false){return header(title,subtitle,actions,root);}
 function render(){
  if(dragState)endDrag(true,true);
@@ -83,14 +84,14 @@ function render(){
  prepareRuntimeRoute(S.route);
  const view=routeView(S.route),owner=ownerForRoute(S.route);
  const runtimeState=view.runtimeState||(pendingForOwner(owner).length?'retained':'ready');
- ui.product.dataset.runtimeOwner=owner||'';ui.product.dataset.contentState=runtimeState;
+ ui.product.dataset.route=S.route;ui.product.dataset.runtimeOwner=owner||'';ui.product.dataset.contentState=runtimeState;
  if(owner&&runtimeState!=='pending')S.runtime.published[owner]=true;
  if(S.route==='gacha/data'&&runtimeState!=='pending')S.runtime.gachaDataPublished=true;
  if(!view.runtimeState)view.html=retainedReadNotice(S.route)+view.html;
- const root=['home','tools','plugins'].includes(S.route);ui.product.classList.toggle('has-nav',root);
- ui.header.innerHTML=view.header||appBar(view.title||'Android Tool Suite','',taskButton(),root);
+ const root=['home','tools','warehouse','settings'].includes(S.route);ui.product.classList.toggle('has-nav',root);
+ ui.header.innerHTML=view.header||appBar(view.title||'Android Tool Suite','','',root);
  ui.context.innerHTML=view.context||'';ui.content.innerHTML=view.html;ui.footer.innerHTML=view.footer||'';
- ui.nav.hidden=!root;ui.nav.innerHTML=root?['home','tools','plugins'].map((id,i)=>`<button class="nav-item ${S.route===id?'active':''}" aria-current="${S.route===id?'page':'false'}" data-action="root:${id}">${icon(['home','grid','plugin'][i])}<span>${['首页','工具','插件'][i]}</span></button>`).join(''):'';
+ ui.nav.hidden=!root;ui.nav.innerHTML=root?['home','tools','warehouse','settings'].map((id,i)=>`<button class="nav-item ${S.route===id?'active':''}" aria-current="${S.route===id?'page':'false'}" data-action="root:${id}">${icon(['home','grid','download','gear'][i])}<span>${['主页','工具','仓库','设置'][i]}</span></button>`).join(''):'';
  ui.content.querySelectorAll('input[data-mixed]').forEach(el=>el.indeterminate=el.dataset.mixed==='true');
  ui.content.scrollTop=scroll;
  ui.content.querySelectorAll('[data-scroll-key]').forEach(el=>{if(horizontal[el.dataset.scrollKey]!=null)el.scrollLeft=horizontal[el.dataset.scrollKey];});
@@ -115,7 +116,7 @@ function renderStudio(){
 function routeView(route){
  const [family,sub,id]=route.split('/');
  const pendingView=runtimeRouteView(route);if(pendingView)return pendingView;
- if(family==='home')return homeView();if(family==='tools')return toolsView();if(family==='plugins')return pluginsView();if(family==='plugin')return pluginView(sub);if(family==='permissions')return permissionsView(sub);if(family==='versions')return versionsView(sub);
+ if(family==='widgets')return widgetManagementView(sub);if(family==='info')return pluginInfoView(sub);if(family==='home')return homeView();if(family==='tools')return toolsView();if(family==='plugins'||family==='warehouse')return pluginsView();if(family==='plugin')return pluginView(sub);if(family==='permissions')return permissionsView(sub);if(family==='versions')return versionsView(sub);
  if(family==='compatibility')return compatibilityView();if(family==='settings')return settingsView();if(family==='about'||family==='licenses')return aboutView(family==='licenses');
  if(family==='data')return sub==='owner'?dataOwnerView(id):sub?flowView():dataCenterView();if(family==='task')return taskView(sub);if(family==='tasks')return tasksView();
  if(family==='phi')return phiView(sub,id);if(family==='gacha')return gachaView(sub,id);if(family==='access')return accessView(sub);if(family==='shizuku')return shizukuView();if(family==='registry')return registryView(sub);if(family==='battery')return batteryView();return guideView();
@@ -186,7 +187,7 @@ function executeFlow(){
  const f=S.flow;if(!flowCanContinue())return;
  const rows=selectedFlowItems().map(i=>({id:i.id,name:i.title,owner:ownerName(i.owner),mode:flowMode(i)}));
  const label={export:'导出数据包',import:'导入数据包',delete:'删除所选数据'}[f.kind];
- const context={kind:f.kind,owner:f.owner,returnRoute:`data/${f.kind}`,file:f.file||'AndroidToolSuite-示例备份.atsbackup'};
+ const context={kind:f.kind,owner:f.owner,returnRoute:`data/${f.kind}`,file:f.file||(f.kind==='export'?demoExportFileName('flow'):null)};
  const job=startTask({title:label,owner:'data',kind:f.kind,rows,context,stages:f.kind==='export'?['准备所选内容','加密与生成数据包','写入保存位置']:f.kind==='import'?['校验文件与密码','准备恢复内容','写入并核对结果']:['核对删除范围','处理所选数据','刷新本机状态']});
  // This is an interaction prototype: the task changes only this in-memory preview.
  job.commit=(done)=>{if(f.kind==='delete'){for(const row of done){if(row.id==='phi-history')S.phi.empty=true;if(row.id==='gacha-hsr')S.gacha.accounts=S.gacha.accounts.filter(a=>a.game!=='星穹铁道');if(row.id==='gacha-gi')S.gacha.accounts=S.gacha.accounts.filter(a=>a.game!=='原神');if(row.id==='access-config')S.services.forEach(service=>{service.favorite=false;service.auto=false;});}}};
@@ -211,10 +212,14 @@ function tickJob(job){
   renderBackground();jobTimers.set(job.id,setTimeout(advance,320));
  };jobTimers.set(job.id,setTimeout(advance,320));
 }
-function retryJob(id){const j=S.jobs.find(j=>j.id===id);if(!j)return;j.status='running';j.progress=0;j.stage=0;j.outcome=S.outcome;j.error='';j.attempt++;S.outcome='success';S.condition='normal';j.rows.filter(r=>r.status!=='done').forEach(r=>r.status='waiting');go(`task/${id}`,{replace:true});tickJob(j);}
+function retryJob(id){const j=S.jobs.find(j=>j.id===id);if(!j)return;if(['phi','gacha'].includes(j.owner)){go(j.context?.target||(j.owner==='phi'?'phi/overview':'gacha/records'));return;}j.status='running';j.progress=0;j.stage=0;j.outcome=S.outcome;j.error='';j.attempt++;S.outcome='success';S.condition='normal';j.rows.filter(r=>r.status!=='done').forEach(r=>r.status='waiting');go(`task/${id}`,{replace:true});tickJob(j);}
 function createSampleTask(status){
  clearTimeout(jobTimers.get('sample'));jobTimers.delete('sample');
  const job={id:'sample',title:'导入数据包',owner:'data',kind:'import',created:'09:42',rows:[{id:'a',name:'应用设置',owner:'Android Tool Suite',status:'done'},{id:'b',name:'成绩与变化历史',owner:'Phigros Data Studio',status:'done'},{id:'c',name:'原神记录',owner:'跃迁与祈愿分析',status:status==='success'?'done':'failed'}],context:{returnRoute:'data'},stages:['校验文件','恢复所选内容','核对结果'],status:status==='failed'?'failed':status,progress:100,stage:2,outcome:'success',attempt:1,error:status==='partial'?'2 个对象已完成，1 个对象尚未恢复。':status==='failed'?'演示：数据包密码校验失败，本机数据未改变。':'',commit:null};
  if(status==='failed')job.rows.forEach(r=>r.status='failed');if(status==='running'){job.progress=13;job.stage=0;job.rows.forEach(r=>r.status='waiting');}
  S.jobs=S.jobs.filter(j=>j.id!=='sample');S.jobs.unshift(job);go('task/sample',{root:true});S.root='home';if(status==='running')tickJob(job);
 }
+
+const BROWSE_SEARCHES={tools:['toolQuery','tool-query'],plugins:['pluginQuery','plugin-query'],warehouse:['repositoryQuery','repository-query'],data:['dataQuery','data-query'],access:['accessQuery','access-query']};
+function browseSearchButton(key){const active=!!S.searchShown?.[key]||!!S[BROWSE_SEARCHES[key][0]];return ib(active?'close':'search',active?'关闭搜索':'搜索',`browse-search:${key}`);}
+function browseSearch(key,label='搜索名称或用途'){const [property,id]=BROWSE_SEARCHES[key];return S.searchShown?.[key]||S[property]?search(id,label,S[property]||'',label):'';}

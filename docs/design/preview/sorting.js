@@ -31,7 +31,7 @@ function nudgeSort(group,id,delta,first=false){
  const target=first?0:Math.max(0,Math.min(nodes.length-1,index+delta));if(index===target)return;
  const before=[...S[sortKey(group)]],node=nodes[index];S.overlay=null;renderOverlay();
  animateSortLayout(group,()=>{if(target>index)region.insertBefore(node,nodes[target].nextSibling);else region.insertBefore(node,nodes[target]);});
- saveVisibleOrder(group,before);updateSortUndoControl();node.focus({preventScroll:true});announceSort(`${PLUGINS[id].short}，第 ${target+1} / ${nodes.length} 位`);toast('顺序已调整','sort-undo','撤销');
+ saveVisibleOrder(group,before);updateSortUndoControl();node.focus({preventScroll:true});announceSort(`${widgetTitle(id)}，第 ${target+1} / ${nodes.length} 位`);toast('顺序已调整','sort-undo','撤销');
 }
 function startSortDrag(d){
  if(dragState!==d||!d.tile.isConnected)return;
@@ -43,7 +43,7 @@ function startSortDrag(d){
  d.tile.classList.add('sort-placeholder');ui.device.classList.add('sorting-active');
  try{d.tile.setPointerCapture(d.pointerId);}catch{}
  d.frame=requestAnimationFrame(time=>{if(dragState!==d)return;d.ghost.classList.add('is-lifted');sortFrame(time);});
- announceSort(`已提起${PLUGINS[d.id].short}，拖动选择新位置`);
+ announceSort(`已提起${widgetTitle(d.id)}，拖动选择新位置`);
 }
 function sortFrame(time){
  const d=dragState;if(!d?.active)return;
@@ -62,7 +62,7 @@ function sortFrame(time){
    const target=nodes.find(el=>el!==d.tile&&inside(layout(el)));
    if(target){const r=layout(target),horizontal=r.width<rr.width*.8&&Math.abs(r.top-source.top)<24*d.scale,after=horizontal?d.lastX>r.left+r.width/2:d.lastY>r.top+r.height/2;
     const current=nodes.indexOf(d.tile),targetIndex=nodes.indexOf(target),next=targetIndex+(after?1:0)-(current<targetIndex?1:0);
-    if(next!==current){animateSortLayout(d.group,()=>region.insertBefore(d.tile,after?target.nextSibling:target),d.tile);d.lastSwap=time;d.changed=true;announceSort(`${PLUGINS[d.id].short}，第 ${next+1} / ${nodes.length} 位`);}
+    if(next!==current){animateSortLayout(d.group,()=>region.insertBefore(d.tile,after?target.nextSibling:target),d.tile);d.lastSwap=time;d.changed=true;announceSort(`${widgetTitle(d.id)}，第 ${next+1} / ${nodes.length} 位`);}
    }
   }
  }
@@ -78,7 +78,7 @@ function endDrag(cancelled=false,silent=false){
  const order=sortNodes(d.group).map(el=>el.dataset.tile),changed=!cancelled&&JSON.stringify(order)!==JSON.stringify(d.originalVisible);
  if(changed)saveVisibleOrder(d.group,d.before);
  const finish=()=>{d.ghost?.remove();d.tile.classList.remove('sort-placeholder');ui.device.classList.remove('sorting-active');sortSettling=false;updateSortUndoControl();flushSortBackground();
-  if(changed){announceSort(`${PLUGINS[d.id].short}已放置，排序完成`);toast('顺序已保存到当前预览','sort-undo','撤销');}
+  if(changed){announceSort(`${widgetTitle(d.id)}已放置，排序完成`);toast('顺序已保存到当前预览','sort-undo','撤销');}
   else if(cancelled&&!silent)announceSort('已取消拖动，原顺序保留');
   else if(!cancelled&&!d.moved&&!silent)openTileMenu(d.tile,d.lastX,d.lastY);
  };

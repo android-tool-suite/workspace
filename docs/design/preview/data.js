@@ -73,14 +73,14 @@ const RECORDS=Array.from({length:84},(_,i)=>({id:`202609${String(120000+i).padSt
 const DATA_ITEMS=[
  {id:'host-settings',owner:'host',title:'应用设置与首页布局',kind:'设置',size:'12 KiB',merge:true,keep:true,recovery:'手动设置与布局，建议保留'},
  {id:'packages',owner:'host',title:'已安装的 v3 插件包',kind:'安装包',size:'4 个 v3 包',merge:false,keep:true,recovery:'包含本地安装版本，建议随数据保留'},
- {id:'phi-profile',owner:'phi',title:'账号档案',kind:'设置',size:'4 KiB',merge:false,keep:true,recovery:'本地备注与档案设置，建议保留'},
- {id:'phi-history',owner:'phi',title:'成绩与变化历史',kind:'业务数据',size:'1.8 MiB',merge:false,keep:true,recovery:'历史节点无法从最新云存档重建',depends:['phi-profile']},
- {id:'phi-token',owner:'phi',title:'同步登录凭据',kind:'敏感数据',size:'1 KiB',recovery:'可重新登录；迁移时按需选择',secret:true,merge:false,depends:['phi-profile']},
+ {id:'phi-profile',owner:'phi',title:'账号档案',kind:'设置',size:'4 KiB',merge:true,keep:true,recovery:'本地备注与档案设置，建议保留'},
+ {id:'phi-history',owner:'phi',title:'成绩与变化历史',kind:'业务数据',size:'1.8 MiB',merge:true,keep:true,recovery:'历史节点无法从最新云存档重建',depends:['phi-profile']},
+ {id:'phi-token',owner:'phi',title:'同步登录凭据',kind:'敏感数据',size:'1 KiB',recovery:'可重新登录；迁移时按需选择',secret:true,merge:true,depends:['phi-profile']},
  {id:'phi-cache',owner:'phi',title:'定数表缓存',kind:'缓存',size:'630 KiB',recovery:'可重新下载，不必重复备份',cache:true,merge:false},
  {id:'gacha-hsr',owner:'gacha',title:'星穹铁道记录',kind:'业务数据',size:'2 个账号 · 848 条',merge:true,keep:true,recovery:'超出服务端保留期的记录无法重新获取'},
  {id:'gacha-gi',owner:'gacha',title:'原神记录',kind:'业务数据',size:'1 个账号 · 520 条',merge:true,keep:true,recovery:'超出服务端保留期的记录无法重新获取'},
- {id:'gacha-login',owner:'gacha',title:'米游社登录状态',kind:'敏感数据',size:'2 KiB',recovery:'可重新登录；迁移时按需选择',secret:true,merge:false},
- {id:'access-config',owner:'access',title:'收藏与自动恢复规则',kind:'设置',size:'3 KiB',merge:false,keep:true,recovery:'手动收藏与逐项自动恢复设置'}
+ {id:'gacha-login',owner:'gacha',title:'米游社登录状态',kind:'敏感数据',size:'2 KiB',recovery:'可重新登录；迁移时按需选择',secret:true,merge:true},
+ {id:'access-config',owner:'access',title:'收藏与自动恢复规则',kind:'设置',size:'3 KiB',merge:true,keep:true,recovery:'手动收藏与逐项自动恢复设置'}
 ];
 const REFERENCES=[
  ['Atlassian Drag and Drop','提起、占位、放置反馈和可访问的替代操作','https://atlassian.design/components/pragmatic-drag-and-drop/design-guidelines'],
@@ -97,7 +97,7 @@ const REFERENCES=[
  ['phi-plugin','定数分组与成绩图片的信息组织','https://github.com/Catrong/phi-plugin']
 ];
 const SCENES=[
- ['主应用','home','首页 · 个人工具台','home','home'],['主应用','tools','工具 · 可用能力','tools','grid'],['主应用','plugins','插件 · 已安装','plugins','plugin'],['主应用','discover','插件 · 发现与安装','plugins','plus'],['主应用','detail-phi','统一插件详情','plugin/phi','plugin'],['主应用','detail-provider','完全信任插件详情','plugin/shizuku','shield'],['主应用','permissions','功能权限','permissions/phi','lock'],['主应用','versions','历史版本与升级','versions/phi','history'],['主应用','settings','外观与更新设置','settings','gear'],['主应用','about','关于与许可','about','info'],
+ ['主应用','home','主页 · 常用工具','home','home'],['主应用','tools','工具 · 可用能力','tools','grid'],['主应用','plugins','管理 · 已安装插件','plugins','plugin'],['主应用','discover','仓库 · 浏览与安装','warehouse','plus'],['主应用','detail-phi','统一插件详情','plugin/phi','plugin'],['主应用','detail-provider','完全信任插件详情','plugin/shizuku','shield'],['主应用','permissions','功能权限','permissions/phi','lock'],['主应用','versions','历史版本与升级','versions/phi','history'],['主应用','settings','外观与更新设置','settings','gear'],['主应用','about','关于与许可','about','info'],
  ['数据与任务','data','数据管理中心','data','folder'],['数据与任务','data-plugin','按插件管理 · 内容详情','data/owner/phi','folder'],['数据与任务','export','导出 · 范围与保护','data/export','upload'],['数据与任务','import','导入 · 文件与合并','data/import','download'],['数据与任务','delete','删除 · 影响范围','data/delete','trash'],['数据与任务','tasks','任务列表','tasks','tasks'],['数据与任务','task-running','执行中 · 可以离开','task/sample','spinner'],['数据与任务','task-success','完成 · 查看结果','task/sample','check'],['数据与任务','task-failed','失败 · 保留并重试','task/sample','warning'],['数据与任务','task-partial','部分完成 · 按对象重试','task/sample','list'],
  ['Phigros','phi','总览与 RKS 趋势','phi/overview','chart'],['Phigros','phi-b30','成绩 · B30','phi/scores','list'],['Phigros','phi-all','成绩 · 全部成绩','phi/scores','search'],['Phigros','phi-history','历史 · 变化节点','phi/history','history'],['Phigros','phi-event','历史 · 前后对比','phi/event/h18','chart'],['Phigros','phi-catalog','定数表 · 分组查询','phi/catalog','book'],['Phigros','phi-accounts','账号档案与登录状态','phi/accounts','account'],['Phigros','phi-login','添加账号 · TapTap','phi/login','key'],['Phigros','phi-image','成绩图片预览','phi/image','image'],
  ['跃迁与祈愿','gacha','账户总览 · 卡池对比','gacha/overview','spark'],['跃迁与祈愿','gacha-pool','卡池详情 · 五星轨迹','gacha/pool/character','chart'],['跃迁与祈愿','gacha-records','记录 · 就地筛选','gacha/records','list'],['跃迁与祈愿','gacha-link','获取 · 粘贴链接','gacha/acquire','link'],['跃迁与祈愿','gacha-log','获取 · 设备日志','gacha/acquire','terminal'],['跃迁与祈愿','gacha-login','获取 · 米游社登录','gacha/acquire','account'],['跃迁与祈愿','gacha-data','账号数据 · 导入导出','gacha/data','folder'],['跃迁与祈愿','gacha-import','UIGF 导入范围预览','gacha/import','download'],['跃迁与祈愿','gacha-export','UIGF 账号范围选择','gacha/export','upload'],['跃迁与祈愿','gacha-analysis','分析依据与草稿','gacha/analysis','filter'],
@@ -107,9 +107,9 @@ const SCENES=[
  ['边界与说明','first','首次使用 · 未安装插件','home','plus'],['边界与说明','empty','暂无数据 · 开始使用','phi/overview','folder'],['边界与说明','offline','离线 · 继续查看缓存','gacha/overview','network'],['边界与说明','permission','权限不足 · 返回原任务','gacha/acquire','lock'],['边界与说明','registry','独立发布中心网页','registry','external'],['边界与说明','guide','覆盖范围与设计参考','guide','book']
 ];
 const NOTES={
- home:['你的工具台','一眼看到关心的数据，再进入工具继续。',['进入排列模式后可直接拖动；卡片即时让位，松手落下并可撤销。','顶部只在有更新或运行任务时提示。','首页布局与插件启用分别管理。']],
+ home:['常用，一眼可见','一眼看到关心的数据，再进入工具继续。',['进入排列模式后可直接拖动；卡片即时让位，松手落下并可撤销。','顶部只在有更新或运行任务时提示。','首页布局与插件启用分别管理。']],
  tools:['从能力开始','工具列表只展示使用时需要的信息。',['点击直接进入；版本和权限进入插件详情。','长按可置顶、移动、隐藏，隐藏不等于停用。','拖动、方向键和移动菜单共用同一套排序；隐藏项保持位置。']],
- plugins:['一个对象，一个详情','“已安装 / 发现”承载插件的完整生命周期。',['从安装、更新或设置入口都进入同一详情。','安装后明确展示启用及权限的下一步。','已安装、启用、权限、连接是不同状态。']],
+ plugins:['一个对象，一个详情','管理维护本机插件，仓库浏览和安装发布包。',['从安装、更新或设置入口都进入同一详情。','安装后明确展示启用及权限的下一步。','已安装、启用、权限、连接是不同状态。']],
  data:['先选择，再做决定','三种数据任务使用同一套选择工作区。',['按来源与关键词定位；批量操作只影响当前结果。','加密、合并与替换放到下一步，选择页只处理范围。','删除前列出关联影响；失败和取消仍保留选择。']],
  task:['页面可以离开，任务仍可查看','任务结果持久留在当前预览会话中。',['顶部任务入口始终可返回执行状态。','可切换下一个任务的成功、失败或部分成功结果。','重试以失败范围为准，不重复展示虚假的成功。']],
  phi:['四种问题，四类数据','总览 / 成绩 / 历史 / 定数表。',['趋势节点连接到当次历史；时间范围可以选择。','B30 固定展示完整 P3 + B27；筛选仅作用于全部成绩。','成绩支持定数、难度、评级、FC、AP 组合筛选；定数表可限制定数范围。']],
@@ -118,7 +118,7 @@ const NOTES={
  access:['收藏不再等于自动启用','收藏、即时启停、自动恢复是独立操作。',['收藏只改变查找方式，不改变服务开关。','每项服务直接显示自动恢复开关，不必进入单独页面。','停用自动恢复中的服务时，说明如何处理恢复规则。']],
  settings:['低频偏好，有序归属','主题、更新、数据管理与关于。',['单项开关即时生效。','导入导出属于完整任务页面。','主题和设备尺寸可从预览控制区切换。']],
  registry:['发布信息属于网页','先说明用途和兼容要求，再提供下载。',['只提供正式版本与正式历史版本，本地开发构建不进入发布目录。','这里呈现发布状态，应用内才呈现安装状态。','下载仅为模拟，不会安装任何程序。']],
- guide:['独立、离线、可检查','这是下一代交互方案，尚未应用到 Android 产品。',['所有页面使用同一组组件和状态模型。','可选择任一场景、切换主题和画布。','外部动作通过示例选择器及演示任务模拟。']]
+ guide:['独立、离线、可检查','用于核对 Android 界面与交互的离线设计样例。',['所有页面使用同一组组件和状态模型。','可选择任一场景、切换主题和画布。','外部动作通过示例选择器及演示任务模拟。']]
 };
 function initialState(){return {
  route:'home',root:'home',stack:[],scrolls:{},runtime:createRuntimeState(),buildFlavor:'release',nextReadOutcome:'success',readPhase:'local',readTiming:'instant',autoAppUpdate:true,appUpdateChecked:false,theme:'light',size:'phone',zoom:'fit',condition:'normal',outcome:'success',focus:false,

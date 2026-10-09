@@ -199,7 +199,7 @@ function ensureGame(game,force=false,options={}){
  if(gameLoaded(game))S.runtime.gameAvailable[game]=true;cancelLocalRead(`gacha-game:${game}`);S.runtime.games[game]='loading';queueLocalRead('gacha',`gacha-game:${game}`,()=>{S.gacha.recordSets??={};for(const a of S.gacha.accounts.filter(a=>a.game===game))S.gacha.recordSets[a.id]??=makeGachaRecords(a);S.runtime.games[game]='ready';S.runtime.gameAvailable[game]=true;const target=S.gacha.accounts.find(a=>a.id===S.runtime.switchTarget);if(target?.game===game)saveGachaSelection(target.id);},()=>{S.runtime.games[game]='error';const target=S.gacha.accounts.find(a=>a.id===S.runtime.switchTarget);if(target?.game===game){S.runtime.switchError='read';S.runtime.switchStage='failed';}},options);
 }
 function accountReadLabel(account){return gameLoaded(account.game)?gachaRecordsFor(account).length+' 条记录':S.runtime.games[account.game]==='error'?'读取失败':'尚未读取';}
-const GACHA_WRITES=new Set(['gacha-fetch','gacha-find-link','gacha-login-start','gacha-login-complete','gacha-role-link','gacha-logout-confirmed','gacha-delete-confirmed','analysis-save','uigf-confirm']);
+const GACHA_WRITES=new Set(['gacha-account-picker','gacha-account','gacha-switch-cancel','gacha-fetch','gacha-find-link','gacha-login-start','gacha-login-complete','gacha-role-link','gacha-logout-confirmed','gacha-delete-confirmed','analysis-save','uigf-confirm']);
 function gachaSelectionPending(){return ['reading','saving'].includes(S.runtime.switchStage);}
 function updateGachaSwitchControls(){
  const blocked=gachaSelectionPending();
@@ -211,6 +211,7 @@ function updateGachaSwitchControls(){
 }
 function cancelGachaSwitch(){cancelLocalRead('gacha-selection-save');S.runtime.switchTarget=null;S.runtime.switchOrigin=null;S.runtime.switchError=null;S.runtime.switchStage=null;}
 function requestGachaSwitch(id){
+ if(gachaSelectionPending())return;
  const account=S.gacha.accounts.find(a=>a.id===id);if(!account)return;closeOverlay();cancelGachaSwitch();
  if(id===S.gacha.account){if(!gameLoaded(account.game)||S.runtime.games[account.game]==='error')ensureGame(account.game,true);if(S.route==='gacha/data')go('gacha/overview');else render();return;}
  S.runtime.switchOrigin=S.route;S.runtime.switchTarget=id;S.runtime.switchStage='reading';
@@ -225,10 +226,10 @@ function saveGachaSelection(id){
 function commitGachaSwitch(candidate){
  const {id,analysis}=candidate,origin=S.runtime.switchOrigin;if(!S.gacha.accounts.some(a=>a.id===id))return;
  // The selected account and its analysis become visible in the same turn, after save succeeds.
- S.gacha.analysis=analysis;S.gacha.analysisDraft=null;S.gacha.account=id;S.gacha.page=0;S.gacha.pool='character';S.gacha.detailFilter='all';cancelGachaSwitch();
+ S.gacha.analysis=analysis;S.gacha.analysisDraft=null;S.gacha.account=id;S.gacha.lastByGame??={};S.gacha.lastByGame[S.gacha.accounts.find(a=>a.id===id).game]=id;S.gacha.page=0;S.gacha.pool='character';S.gacha.detailFilter='all';cancelGachaSwitch();
  if(origin==='gacha/data'&&S.route===origin)go('gacha/overview');
 }
-function gachaSwitchNotice(){const a=S.gacha.accounts.find(a=>a.id===S.runtime.switchTarget);if(!a||!S.runtime.switchError)return '';const message=S.runtime.switchError==='save'?`账号选择保存失败，尚未切换到 ${a.game} · ${a.uid}。`:`未能读取 ${a.game} · ${a.uid} 的记录。`;return notice(message+'当前账号、设置与记录保持不变。','warn',btn('重试切换',`gacha-account:${a.id}`,'text small','refresh')+btn('取消切换','gacha-switch-cancel','text small'));}
+function gachaSwitchNotice(){const a=S.gacha.accounts.find(a=>a.id===S.runtime.switchTarget);if(!a||!S.runtime.switchError)return '';const message=S.runtime.switchError==='save'?`账号选择保存失败，尚未切换到 ${a.game} · ${a.uid}。`:`未能读取 ${a.game} · ${a.uid} 的记录。`;return notice(message+'当前账号、设置与记录保持不变。','warn',btn('重试切换',`gacha-account:${a.id}`,'text small','refresh')+btn('保留当前账号','gacha-switch-cancel','text small'));}
 function gachaDataPending(){return S.gacha.accounts.some(a=>['idle','loading'].includes(S.runtime.games[a.game]));}
 
 function gachaSelectionReady(kind){const ids=kind==='import'?S.gacha.importIds:S.gacha.exportIds;return ids.length>0&&ids.every(id=>gameLoaded(kind==='import'?(id==='g1'?'星穹铁道':'原神'):S.gacha.accounts.find(a=>a.id===id)?.game));}
@@ -236,8 +237,8 @@ function gameLoadNotices(games){if(S.route==='gacha/data'&&gachaDataPending())re
 function ensureMihoyoSession(force=false){if(!force&&S.runtime.session!=='idle')return;cancelLocalRead('mihoyo-session');S.runtime.session='loading';queueLocalRead('gacha','mihoyo-session',()=>S.runtime.session='ready',()=>S.runtime.session='error');}
 function runtimeRouteView(route){
  const [owner,sub]=route.split('/'),first=!S.runtime.published[owner];
- const title=owner==='phi'?({event:'当次变化',image:'成绩图片预览',accounts:'账号档案',login:'添加账号'}[sub]||'Phigros Data Studio'):owner==='gacha'?(sub==='pool'?poolLabel(POOLS.find(p=>p.id===route.split('/')[2])||POOLS[0]):{acquire:'获取记录',data:'数据与账号',import:'导入记录',export:'导出记录',analysis:'统计设置'}[sub]||'抽卡分析'):owner==='shizuku'?'Shizuku 授权':'无障碍服务';
- const shell=(state,html='',context='')=>({header:appBar(title,'',taskButton()),context,html,runtimeState:state});
+ const title=owner==='phi'?({event:'当次变化',image:'成绩图片预览',accounts:'账号档案',login:'添加账号'}[sub]||'Phigros Data Studio'):owner==='gacha'?(sub==='pool'?poolLabel(POOLS.find(p=>p.id===route.split('/')[2])||POOLS[0]):{acquire:'获取记录',data:'账号管理',import:'导入记录',export:'导出记录',analysis:'统计设置'}[sub]||'抽卡分析'):owner==='shizuku'?'Shizuku 授权':'无障碍服务';
+ const shell=(state,html='',context='')=>({header:appBar(title,'',''),context,html,runtimeState:state});
  if(['phi','gacha'].includes(owner)&&S.runtime.web[owner]!=='ready')return S.runtime.web[owner]==='error'?shell('error',localReadPanel('error','打开工具',`web-read-retry:${owner}`)):shell('pending');
  if(owner==='phi'&&['overview','scores','history','event','image','catalog'].includes(sub)){
   const kind=sub==='catalog'?'catalog':'analysis',status=S.runtime.phiPages[kind];
@@ -267,9 +268,9 @@ function configureRuntimeScene(id){
  if(id==='phi-read-loading')S.nextReadOutcome='hold';
  if(id==='phi-read-error')S.runtime.phiPages.analysis='error';
  if(id.startsWith('phi-push-')){S.runtime.phiPages.analysis='ready';if(id==='phi-push-error')S.runtime.phiPush={status:'error',profile:S.phi.account,targets:null};else if(id==='phi-push-warning'){S.runtime.phiPush={status:'ready',profile:S.phi.account,targets:makeDemoTargets(S.phi.account),source:'computed',warning:true};}else ensurePhiTargets(true,{outcome:'hold'});}
- if(id==='gacha-read-loading'||id==='gacha-read-error'){setSimulationNote('演示原神记录尚未就绪；当前星铁账号继续可用。可从账号菜单选回当前账号取消切换。');seedReadyGame('星穹铁道');S.runtime.switchTarget='g2';S.runtime.switchOrigin='gacha/overview';S.runtime.switchStage='reading';if(id==='gacha-read-error'){S.runtime.games['原神']='error';S.runtime.switchError='read';S.runtime.switchStage='failed';}else{S.nextReadOutcome='hold';ensureGame('原神');}}
+ if(id==='gacha-read-loading'||id==='gacha-read-error'){setSimulationNote('演示原神记录尚未就绪；当前星铁账号继续可用。读取或保存期间账号选择暂不可用，失败后可重新选择。');seedReadyGame('星穹铁道');S.runtime.switchTarget='g2';S.runtime.switchOrigin='gacha/overview';S.runtime.switchStage='reading';if(id==='gacha-read-error'){S.runtime.games['原神']='error';S.runtime.switchError='read';S.runtime.switchStage='failed';}else{S.nextReadOutcome='hold';ensureGame('原神');}}
  if(id==='gacha-switch-saving'||id==='gacha-switch-save-error'){
-  seedReadyGame('星穹铁道');seedReadyGame('原神');S.readPhase='selection';S.nextReadOutcome=id==='gacha-switch-saving'?'hold':'error';S.readTiming='instant';S.runtime.switchTarget='g2';S.runtime.switchOrigin='gacha/overview';saveGachaSelection('g2');setSimulationNote('目标记录已经读取；只有账号选择保存成功后才切换。可跨页浏览原账号，或选回当前账号取消。');
+  seedReadyGame('星穹铁道');seedReadyGame('原神');S.readPhase='selection';S.nextReadOutcome=id==='gacha-switch-saving'?'hold':'error';S.readTiming='instant';S.runtime.switchTarget='g2';S.runtime.switchOrigin='gacha/overview';saveGachaSelection('g2');setSimulationNote('目标记录已经读取；只有账号选择保存成功后才切换。等待时可跨页浏览原账号，账号选择和修改操作暂不可用。');
  }
  if(id==='gacha-data-pending-error'){S.readPhase='local';ensureGame('星穹铁道',true,{outcome:'error',delay:0});ensureGame('原神',true,{outcome:'hold'});setSimulationNote('演示一个游戏读取失败，另一个仍在读取。数据页等两者结束后统一列出结果。');}
  if(id==='gacha-session-loading'){S.gacha.source='mihoyo';S.nextReadOutcome='hold';}

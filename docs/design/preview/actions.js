@@ -60,7 +60,7 @@ function moveTile(group,id,delta,first=false){nudgeSort(group,id,delta,first);}
 function startJourney(id){
  resetSceneState();
  S.condition='normal';S.outcome='success';S.overlay=null;
- if(id==='install'){S.pluginTab='discover';S.plugins.battery.installed=false;S.plugins.battery.enabled=false;S.scene='discover';go('plugins',{root:true});}
+ if(id==='install'){S.pluginTab='discover';S.plugins.battery.installed=false;S.plugins.battery.enabled=false;S.scene='discover';go('warehouse',{root:true});}
  if(id==='backup'){S.scene='export';beginFlow('export');}
  if(id==='permission'){S.gacha.source='log';S.connection='unauthorized';S.plugins.gacha.permissions['查找设备日志']=false;S.returnTo=null;S.scene='gacha-log';go('gacha/acquire',{root:true});S.root='home';}
  if(id==='trend'){S.scene='phi';S.phi.days=30;go('phi/overview',{root:true});S.root='home';}
@@ -83,14 +83,27 @@ function downloadDemoImage(){
  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="${height}" viewBox="0 0 1000 ${height}"><rect width="1000" height="${height}" fill="#162f24"/><g font-family="sans-serif" fill="#e6f2e8"><text x="40" y="55" font-size="28">${esc(currentPhi()?.name||'示例玩家')} · Phigros</text><text x="40" y="98" font-size="24">${phiRks().toFixed(4)} RKS · ${profile?'个人信息图':'B30 / P3 + B27'}</text>${body}<text x="500" y="${height-19}" font-size="14" text-anchor="middle" fill="#a3bfac">UI PREVIEW — 示例数据 — NOT A REAL SAVE</text></g></svg>`;
  if(demoImageUrl)URL.revokeObjectURL(demoImageUrl);
  demoImageUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
- showOverlay('image-save',{url:demoImageUrl});
+ showOverlay('image-save',{url:demoImageUrl,which:S.phi.image});
 }
 
 function act(action,element){
  const [name,a,b,c]=action.split(':');
- if(gachaSelectionPending()&&GACHA_WRITES.has(name)){toast('完成或取消账号切换后，再执行此操作。');return;}
+ if(gachaSelectionPending()&&GACHA_WRITES.has(name)){toast('账号切换完成后，再执行此操作。');return;}
  switch(name){
   case 'go':if(a==='gacha/analysis')S.gacha.analysisDraft=clone(S.gacha.analysis);go(a);break;
+  case 'phi-filter-open':showOverlay('phi-filters',{catalog:a==='catalog',draft:clone(S.phi)});break;
+  case 'phi-filter-apply':if(!phiDraftError()){for(const key of PHI_FILTER_KEYS)S.phi[key]=Array.isArray(S.overlay.draft[key])?[...S.overlay.draft[key]]:S.overlay.draft[key];closeOverlay();render();}break;
+  case 'service-info':showOverlay('service-info',{id:a});break;
+  case 'gacha-delete-range-start':S.gacha.deleteIds=[];go('gacha/delete');break;
+  case 'gacha-delete-range-review':if(S.gacha.deleteIds?.length)showOverlay('gacha-delete-range');break;
+  case 'gacha-delete-range-confirmed':{const ids=[...S.gacha.deleteIds];closeOverlay();startTask({title:'删除所选记录',owner:'gacha',kind:'delete',rows:ids.map(id=>({id,name:'本地账号记录'})),context:{target:'gacha/data',targetLabel:'管理账号'},commit:()=>{S.gacha.accounts=S.gacha.accounts.filter(a=>!ids.includes(a.id));for(const id of ids)delete S.gacha.recordSets[id];if(ids.includes(S.gacha.account))S.gacha.account=S.gacha.accounts[0]?.id;S.gacha.deleteIds=[];}});break;}
+  case 'browse-search':{S.searchShown||={};const active=S.searchShown[a]||!!S[BROWSE_SEARCHES[a][0]];S.searchShown[a]=!active;if(active)S[BROWSE_SEARCHES[a][0]]='';render();if(!active)document.getElementById(BROWSE_SEARCHES[a][1])?.focus();break;}
+  case 'widget-open':openConfiguredWidget(a);break;
+  case 'gacha-game':{const recent=S.gacha.lastByGame?.[a],target=S.gacha.accounts.find(account=>account.game===a&&account.id===recent)||S.gacha.accounts.find(account=>account.game===a);if(target)switchGacha(target.id);else {go('gacha/acquire');toast('此游戏还没有本地账号');}break;}
+  case 'widget-visibility':S.hiddenWidgets=S.hiddenWidgets.includes(a)?S.hiddenWidgets.filter(x=>x!==a):[...S.hiddenWidgets,a];render();break;
+  case 'widget-route-discard':S.widgetEditor=null;closeOverlay(true);leavePage();break;
+  case 'widget-remove':showOverlay('widget-remove',{id:a});break;
+  case 'widget-remove-confirmed':{const id=S.overlay.id;delete S.widgetInstances[id];S.homeOrder=S.homeOrder.filter(x=>x!==id);S.hiddenWidgets=S.hiddenWidgets.filter(x=>x!==id);S.wideTiles=S.wideTiles.filter(x=>x!==id);closeOverlay();render();toast('小部件已移除');break;}
   case 'root':go(a,{root:true});break;
   case 'back':back();break;
   case 'scene':selectScene(a);break;
@@ -116,7 +129,16 @@ function act(action,element){
   case 'sort-mode':S.sortMode=S.sortMode===a?null:a;render();break;
   case 'sort-undo':undoSort();break;
   case 'toast-close':document.getElementById('toast').hidden=true;break;
-  case 'add-widget':showOverlay('add-widget');break;
+  case 'quick-toggle':ensureWidgetInstances();S.quickPins=S.quickPins.includes(a)?S.quickPins.filter(x=>x!==a):[...S.quickPins,a];closeOverlay();render();toast('首页快捷入口已更新');break;
+  case 'quick-menu':showOverlay('quick-menu',{id:a});break;
+  case 'quick-move':{const i=S.quickPins.indexOf(a),j=i+Number(b);if(i>=0&&j>=0&&j<S.quickPins.length)[S.quickPins[i],S.quickPins[j]]=[S.quickPins[j],S.quickPins[i]];closeOverlay();render();break;}
+  case 'widget-manage':go('widgets');break;
+  case 'widget-config':openWidgetEditor(a,b);break;
+  case 'widget-create':openWidgetEditor(a);S.widgetEditor.draft.preset=b;render();break;
+  case 'widget-save':saveWidgetEditor();break;
+  case 'widget-edit-continue':S.overlay=S.overlay.previous;renderOverlay();break;
+  case 'widget-edit-discard':closeOverlay(true);render();break;
+  case 'add-widget':go('widgets');break;
   case 'widget-add':if(!S.homeOrder.includes(a))S.homeOrder.push(a);S.hiddenWidgets=S.hiddenWidgets.filter(id=>id!==a);closeOverlay();render();toast('已添加到首页');break;
   case 'tile-size':S.wideTiles=S.wideTiles.includes(a)?S.wideTiles.filter(id=>id!==a):[...S.wideTiles,a];closeOverlay();render();break;
   case 'tile-move':moveTile(a,b,Number(c));break;
@@ -125,9 +147,8 @@ function act(action,element){
   case 'restore-tools':S.hiddenTools=[];render();toast('工具入口已恢复');break;
   case 'clear-tool-query':S.toolQuery='';render();break;
   case 'clear-plugin-query':S.pluginQuery='';render();break;
-  case 'discover':S.firstUse=false;S.pluginTab='discover';go('plugins',{root:true});break;
+  case 'discover':S.firstUse=false;S.pluginTab='discover';go('warehouse',{root:true});break;
   case 'plugins-tab':S.pluginTab=a;render();break;
-  case 'plugin-more':showOverlay('plugin-more',{id:a});break;
   case 'plugin-data':go(`data/owner/${a}`);break;
   case 'install':showOverlay('install-confirm',{id:a});break;
   case 'local-package':showOverlay('package-picker');break;
@@ -152,7 +173,7 @@ function act(action,element){
   case 'flow-selected-only':S.flow.onlySelected=!S.flow.onlySelected;render();break;
   case 'flow-clear-filters':S.flow.query='';S.flow.source='all';S.flow.onlySelected=false;render();break;
   case 'flow-visible':changeFlowSelection(flowVisibleItems().map(i=>i.id),a==='all');break;
-  case 'flow-cache-only':for(const i of flowItems())S.flow.modes[i.id]='skip';changeFlowSelection(flowItems().filter(i=>i.cache).map(i=>i.id),true);break;
+  case 'flow-cache-only':{const visible=flowVisibleItems();for(const i of visible)setFlowMode(i.id,'skip',false);for(const i of visible.filter(i=>i.cache))setFlowMode(i.id,'delete',false);render();break;}
   case 'flow-preset':setPreset(a);break;
   case 'flow-protection-preset':if(!S.flow||S.flow.kind!=='export'||!['sensitive','all','none'].includes(a))return;for(const i of flowItems())S.flow.protection[i.id]=a==='all'||a==='sensitive'&&!!i.secret;S.flow.protectionPreset=a;S.flow.dirty=true;render();break;
   case 'flow-next':if(!flowCanContinue())return;if(S.flow.step===0){S.flow.scrolls[0]=ui.content.scrollTop;S.flow.step=1;render();ui.content.scrollTop=S.flow.scrolls[1]||0;}else if(S.flow.kind==='export')showOverlay('save-location',{purpose:'flow'});else executeFlow();break;
@@ -185,16 +206,16 @@ function act(action,element){
   case 'phi-sync':syncPhi();break;
   case 'phi-scores':S.phi.scores=a;render();break;
   case 'phi-level':S.phi.levels=S.phi.levels.includes(a)?S.phi.levels.filter(v=>v!==a):[...S.phi.levels,a];render();break;
-  case 'phi-reset-filters':Object.assign(S.phi,{query:'',levels:['EZ','HD','IN','AT'],constantMin:'',constantMax:'',grades:[],fc:'any',ap:'any'});render();break;
-  case 'phi-grade':S.phi.grades=a==='any'?[]:S.phi.grades.includes(a)?S.phi.grades.filter(g=>g!==a):[...S.phi.grades,a];render();break;
+  case 'phi-reset-filters':Object.assign(S.phi,{query:'',levels:['IN','AT'],constantMin:'',constantMax:'',grades:[],fc:'any',ap:'any',clear:false});render();break;
+  case 'phi-grade':phiDraftState().grades=a==='any'?[]:phiDraftState().grades.includes(a)?phiDraftState().grades.filter(g=>g!==a):[...phiDraftState().grades,a];render();break;
   case 'phi-completion':S.phi[a]=b;render();break;
-  case 'phi-stat':Object.assign(S.phi,{scores:'all',levels:[a],query:'',constantMin:'',constantMax:'',grades:[],fc:b==='FC'?'yes':'any',ap:b==='AP'?'yes':'any'});go('phi/scores',{replace:true});break;
+  case 'phi-stat':Object.assign(S.phi,{scores:'all',levels:[a],query:'',constantMin:'',constantMax:'',grades:[],fc:b==='FC'?'yes':'any',ap:b==='AP'?'yes':'any',clear:b==='Clear'});go('phi/scores',{replace:true});break;
   case 'phi-range':S.phi.days=Number(a);S.phi.point=null;render();break;
   case 'phi-point':S.phi.point=a;render();break;
-  case 'phi-song-history':go('phi/event/h18');break;
+  case 'phi-song-history':showOverlay('phi-song-history',{id:a,level:b});break;
   case 'catalog-level':S.phi.catalogLevels=S.phi.catalogLevels.includes(a)?S.phi.catalogLevels.filter(v=>v!==a):[...S.phi.catalogLevels,a];render();break;
   case 'catalog-reset':Object.assign(S.phi,{catalogQuery:'',catalogLevels:['IN','AT'],catalogMin:'',catalogMax:''});render();break;
-  case 'catalog-band':S.phi.catalogMin=a;S.phi.catalogMax=a===''?'':(Number(a)+.9).toFixed(1);render();break;
+  case 'catalog-band':phiDraftState().catalogMin=a;phiDraftState().catalogMax=a===''?'':(Number(a)+.9).toFixed(1);render();break;
   case 'catalog-update':{startTask({title:'更新定数表',owner:'phi',kind:'sync',rows:[{id:'catalog',name:'定数表',owner:'Phigros'}],stages:['读取发布的定数信息','检查曲目与难度数据','保存本地定数表'],context:{target:'phi/catalog',targetLabel:'查看定数表'},commit:()=>{S.phi.catalogUpdated=true;}});break;}
   case 'phi-image':S.phi.image=a;go('phi/image');break;
   case 'phi-image-kind':S.phi.image=a;render();break;
@@ -209,6 +230,8 @@ function act(action,element){
    switchPhiProfile(S.phi.account);S.phi.reloginId=null;S.phi.loginStage='choice';S.phi.loginName='';S.phi.empty=false;closeOverlay();go('phi/overview',{replace:true});toast('示例登录已完成，可同步云存档');break;
   }
   case 'gacha-tab':go('gacha/'+a,{replace:true});break;
+  case 'gacha-note-save':{const account=S.gacha.accounts.find(x=>x.id===a);if(account&&S.gacha.localNoteDraft?.id===a){account.name=S.gacha.localNoteDraft.value.trim()||account.game;S.gacha.localNoteDraft=null;render();toast('备注已保存');}break;}
+  case 'gacha-note-discard':S.gacha.localNoteDraft=null;closeOverlay();leavePage();break;
   case 'gacha-account-picker':showOverlay('gacha-picker');break;
   case 'gacha-account':switchGacha(a);break;
   case 'gacha-pool-open':S.gacha.pool=a;S.gacha.detailFilter='all';go(`gacha/pool/${a}`);break;
@@ -254,10 +277,12 @@ function act(action,element){
   case 'shizuku-authorized':S.connection='ready';S.condition='normal';closeOverlay();render();toast('示例授权完成，连接可用');break;
   case 'shizuku-connect':S.connection='ready';S.condition='normal';render();break;
   case 'shizuku-check':if(S.condition==='offline')S.condition='normal';readSystemStatus(true);render();break;
+  case 'restore-toggle':{const s=S.services.find(s=>s.id===a);if(s)handleSetting('service-auto:'+a,!s.auto);break;}
   case 'favorite':{const s=S.services.find(s=>s.id===a);s.favorite=!s.favorite;render();toast(s.favorite?'已收藏，服务启停和恢复规则未改变':'已取消收藏，服务设置未改变');break;}
   case 'access-filter':S.accessFilter=a;render();break;
   case 'access-reset':S.accessQuery='';S.accessFilter='all';render();break;
   case 'access-refresh':readSystemStatus(true);render();break;
+  case 'service-stop-once':{const id=S.overlay.service;closeOverlay();changeService(id,false,false);break;}
   case 'service-stop-confirmed':{const id=S.overlay.service;closeOverlay();changeService(id,false,true);break;}
   case 'registry-download':showOverlay('download-demo',{id:a});break;
   case 'add-battery-home':if(!S.homeOrder.includes('battery'))S.homeOrder.push('battery');S.hiddenWidgets=S.hiddenWidgets.filter(v=>v!=='battery');toast('示例小部件已添加到首页','root:home','查看');break;
@@ -276,11 +301,12 @@ function handleSetting(key,checked){const [kind,id,name]=key.split(':');
  else if(kind==='permission'){S.plugins[id].permissions[name]=checked;if(checked)S.condition='normal';if(S.overlay){render();return;}}
  else if(kind==='auto-update')S.autoUpdate=checked;
  else if(kind==='auto-app-update'&&S.buildFlavor!=='local-debug')S.autoAppUpdate=checked;
- else if(kind==='service-auto'){const service=S.services.find(s=>s.id===id);if(!service||!permissionGranted('access','后台自动恢复'))return;service.auto=checked;render();toast(checked?'已开启自动恢复，收藏和当前启用状态保持原样':'已关闭自动恢复，当前服务状态保持原样');return;}
+ else if(kind==='service-auto'){const service=S.services.find(s=>s.id===id);if(!service||checked&&!permissionGranted('access','后台自动恢复'))return;service.auto=checked;render();toast(checked?'已开启自动恢复，收藏和当前启用状态保持原样':'已关闭自动恢复，当前服务状态保持原样');return;}
  else if(kind==='service'){const service=S.services.find(s=>s.id===id);if(!checked&&service.auto){showOverlay('service-stop',{service:id});render();return;}changeService(id,checked);return;}
  render();
 }
 function handleCheck(key,checked){const [kind,id]=key.split(':');
+ if(kind==='gacha-delete-range'){S.gacha.deleteIds||=[];S.gacha.deleteIds=checked?[...new Set([...S.gacha.deleteIds,id])]:S.gacha.deleteIds.filter(item=>item!==id);render();return;}
  if(kind==='flow-item'){changeFlowSelection([id],checked);return;}
  if(kind==='flow-group'){changeFlowSelection(flowVisibleItems().filter(i=>i.owner===id).map(i=>i.id),checked);return;}
  if(kind==='flow-export'){setExportSelected(id,checked);return;}
@@ -294,10 +320,11 @@ function handleCheck(key,checked){const [kind,id]=key.split(':');
  render();
 }
 function handleInput(el){switch(el.id){
+ case 'local-account-note':S.gacha.localNoteDraft={id:S.route.split('/')[2],value:el.value};return;
  case 'flow-query':S.flow.query=el.value;break;
  case 'data-query':S.dataQuery=el.value;break;
- case 'tool-query':S.toolQuery=el.value;break;case 'plugin-query':S.pluginQuery=el.value;break;
- case 'score-min':S.phi.constantMin=el.value;break;case 'score-max':S.phi.constantMax=el.value;break;case 'catalog-min':S.phi.catalogMin=el.value;break;case 'catalog-max':S.phi.catalogMax=el.value;break;
+ case 'repository-query':S.repositoryQuery=el.value;break;case 'tool-query':S.toolQuery=el.value;break;case 'plugin-query':S.pluginQuery=el.value;break;
+ case 'score-min':phiDraftState().constantMin=el.value;break;case 'score-max':phiDraftState().constantMax=el.value;break;case 'catalog-min':phiDraftState().catalogMin=el.value;break;case 'catalog-max':phiDraftState().catalogMax=el.value;break;
  case 'phi-query':S.phi.query=el.value;break;case 'catalog-query':S.phi.catalogQuery=el.value;break;
  case 'gacha-query':S.gacha.query=el.value;S.gacha.page=0;break;case 'access-query':S.accessQuery=el.value;break;
  case 'gacha-link-input':S.gacha.draft=el.value;S.gacha.linkReady=false;break;
@@ -315,6 +342,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>handleInput(e.target));
 document.addEventListener('change',e=>{const el=e.target;
+ if(el.hasAttribute('data-flow-protection-select')){if(el.value==='custom'){S.flow.protectionPreset='custom';S.flow.dirty=true;render();}else act('flow-protection-preset:'+el.value);return;}
  if(el.dataset.flowProtection){act('flow-protection-preset:'+el.dataset.flowProtection);return;}
  if(el.dataset.setting){handleSetting(el.dataset.setting,el.checked);return;}if(el.dataset.check){handleCheck(el.dataset.check,el.checked);return;}
  if(el.dataset.location!=null&&S.overlay){S.overlay.location=el.dataset.location;return;}
