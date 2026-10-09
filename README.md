@@ -7,7 +7,7 @@
 - `plugins/accessibility-grant`：无障碍授权插件。
 - `plugins/phigros-advisor`：Phigros Data Studio 插件。
 - `plugins/gacha-analysis`：原神与崩坏：星穹铁道抽卡记录分析插件。
-- `plugin-registry`：应用与插件的正式/调试索引、历史目录、签名和 GitHub Pages 发布中心。
+- `plugin-registry`：应用与插件的正式索引、历史目录、签名和 GitHub Pages 发布中心。
 
 六个子模块是彼此独立的权威源码仓库，分别维护提交和发布边界。日常开发某一个组件时，直接克隆或进入对应仓库即可；不需要同步修改外层仓库，也不需要检出其他插件。
 
@@ -28,7 +28,7 @@
 - `docs/development/`：开发、集成与发布流程。
 - `docs/design/`：UI 规范及离线交互预览。
 - `docs/plans/`：路线图和专题规划。
-- `docs/working-notes/`：确有协作价值、具有清理条件的短期材料。
+- 必要的短期材料可另建 `docs/working-notes/`，结论提炼后及时删除。
 
 修改或评审界面时，同时参考 [UI 设计规范](docs/design/ui-guidelines.md) 和 [交互预览](docs/design/ui-preview.html)。若公开 SDK token／组件、宿主行为和文档出现差异，应核实实现并同步修正规范与预览。
 
@@ -72,7 +72,7 @@ git clone https://github.com/android-tool-suite/plugin-registry.git
 
 脚本按以下顺序执行：
 
-1. 运行插件索引生成器的纯 Python 单元测试。
+1. 运行插件索引生成器的索引生成器与发布页测试。
 2. 构建主体 APK。
 3. 将当前 `plugin-sdk` 发布到主体仓库内的临时 Maven 仓库。
 4. 使用该临时 SDK 构建并签名 Shizuku 插件。
@@ -125,11 +125,11 @@ artifacts/
 
 ## GitHub Release 与插件仓库
 
-主体和四个插件都支持两个发布通道：手动推送 `debug-v<版本号>` 标签发布不可变 Debug，`v<versionName>` 标签发布正式 Release。普通 CI 只验证构建，不再创建滚动 `debug`；两类发布都包含二进制文件、`release-metadata.json` 与 `SHA256SUMS.txt`。分支、标签和旧 Debug 清理流程见 [发布指南](docs/development/releasing.md)。
+主体和四个插件的日常 CI 只测试并上传构建产物。Debug 通过本地构建和 ADB 安装调试，不发布远程 Debug Release 或调试索引。正式版由匹配组件版本的 `v<versionName>` 标签触发，附件包含带版本号的安装包、`release-metadata.json` 和 `SHA256SUMS.txt`；具体步骤见 [发布指南](docs/development/releasing.md)。
 
-运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护，并作为本工作区子模块锁定已验证版本。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 发布应用 APK、插件包及其正式/调试历史版本，同时保留供宿主自动更新使用的 ECDSA 签名最新索引。组件发布完成后发送事件触发目录重建，不再用定时轮询；宿主下载后继续校验签名、大小与 SHA-256。
+运行时索引由独立的 [`android-tool-suite/plugin-registry`](https://github.com/android-tool-suite/plugin-registry) 仓库维护。它自动发现组织内的 `plugin-*` 仓库，通过 [GitHub Pages 发布中心](https://android-tool-suite.github.io/plugin-registry/) 提供正式最新版本和历史版本。组件发布后发送事件触发目录重建；宿主校验签名、大小与 SHA-256 后安装。
 
-Release 应用默认使用正式插件仓库，但可在仓库页主动切换到调试仓库；Debug 应用默认使用调试仓库。本地 `.atsplugin` 仍可从同一页面导入，并明确显示为未经仓库验证。
+Release 应用检查正式宿主更新；Debug 应用没有在线宿主更新。两种构建的插件仓库均使用正式目录，仓库页也可导入本地 `.atsplugin`，本地来源不会被标为目录验证通过。
 
 插件仓库与外层工作区职责不同：
 
@@ -150,4 +150,4 @@ Release 应用默认使用正式插件仓库，但可在仓库页主动切换到
 
 开发、版本、更新日志、测试与提交约定见 [AGENTS.md](AGENTS.md)。
 
-根级 `temp/` 只存放可删除的日志、发布试跑和构建中转，`workspace/` 用于不属于本项目 Git 历史的外部研究仓库，正式集中产物仍放在 `artifacts/`。本机私密材料与环境说明必须留在 Git 忽略范围内，不得写入仓库文档或提交历史。
+根级 `temp/` 存放日志、试跑和构建中转；仍在使用的验收模拟器数据按用途保留，`workspace/` 用于不属于本项目 Git 历史的外部研究仓库，正式集中产物仍放在 `artifacts/`。本机私密材料与环境说明必须留在 Git 忽略范围内，不得写入仓库文档或提交历史。

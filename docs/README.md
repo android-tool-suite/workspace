@@ -10,7 +10,7 @@
 | [数据管理](architecture/data-management.md) | 归档格式、Dataset、恢复事务、兼容性与删除边界 |
 | [分支与发布](development/releasing.md) | 分支使用、组件集成、发布标签和渠道规则 |
 | [UI 设计规范](design/ui-guidelines.md) | 宿主与插件共用的设计语言、交互模式及评审标准 |
-| [UI 交互预览](design/ui-preview.html) | 可离线打开的设计样例，与 UI 规范配套使用 |
+| [UI 交互预览](design/ui-preview.html) | 四入口、插件详情、数据任务与插件页面的离线交互样例，与 UI 规范配套使用 |
 
 工作区协作规则统一放在 [AGENTS.md](../AGENTS.md)，获取、构建和安装入口放在根级 [README.md](../README.md)，不在各目录重复维护。
 
@@ -21,14 +21,19 @@
 | [产品路线图](plans/roadmap.md) | 优先级、依赖、运行时质量和跨平台演进条件 |
 | [AI 插件开发](plans/ai-plugin-development.md) | Developer Agent、草稿环境、可复现构建与人工批准边界 |
 | [发布平台](plans/publication-platform.md) | 私有草稿、不可搜索发布、公共社区及供应链模型 |
+| [游戏资料与抽卡精细分析](plans/gacha-reference-data.md) | 公开资料动态更新、多来源核对、原始记录保真、版本期次与独立卡池统计 |
 
 路线图描述各方向之间的关系，专题计划定义该方向的详细方案。已确定的公共约束归入架构或开发规范，避免多份文档分别定义同一规则。
 
-## 短期工作材料
+## 源码与临时材料
 
-[working-notes/](working-notes/README.md) 可存放确实需要协作保存的短期提案、对比分析或阶段验证材料。这些文件不构成开发规范，也不作为项目当前状态的权威来源。
+预览源码与生成方法见 [design/preview/README.md](design/preview/README.md)。只维护一个生成 HTML，不保留旧地址的副本或转发脚本。
 
-原始日志、截图、试跑输出和本机环境留在被忽略的 `temp/`；产品版本历史留在对应组件的 `CHANGELOG.md`；持续变化的任务进度优先使用 Issue、PR 或 CI。
+目前保留的短期材料为 [舞萌玩家二维码读取路线](working-notes/maimai-player-qr.md)，用于下一次只读原型选型，包含证据范围与清理条件。
+
+有持续协作价值的短期提案可按需放入 `docs/working-notes/`，注明适用范围和清理条件；结论确定后提炼到对应规范或规划，删除过期材料。无需为了保持目录而保留历史任务报告。
+
+原始日志、截图和试跑输出放在被忽略的 `temp/`；产品版本历史留在组件 `CHANGELOG.md`；任务进度与验证证据优先使用 Issue、PR 或 CI。运行中的验收模拟器、当前安装产物与有实际恢复用途的业务备份按用途保留，重复归档和结束任务的临时文件及时清理。
 
 ## 维护原则
 

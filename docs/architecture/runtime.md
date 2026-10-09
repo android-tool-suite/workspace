@@ -136,7 +136,7 @@ Tool 不得直接调用实现类或旧 `PluginHost` shell 方法。完整规则
 
 ## 5. 平台无关接口边界
 
-当前只实现 Android，但从第一版协议起保留下列接口。它们使用 JSON Schema、IDL 或 WIT 可表达的标量、记录、列表、字节流和结果类型，不出现 Android 类。
+当前实现为 Android 宿主。下列接口是职责划分的抽象示意，不是可直接调用的公开 RPC；实际方法、字段和支持范围以 `app/runtime-contract/src/main/resources/contracts/` 及其生成绑定为准。未来平台保持标量、记录、列表、字节流和结构化结果的边界，不把示意方法或候选 WIT 模型描述为已交付 API。
 
 ### 5.1 RuntimeHost
 
@@ -314,7 +314,7 @@ manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源
 ### 10.1 数据原则
 
 - 默认持久数据由 StorageService 管理；缓存与持久数据分开声明。
-- 凭据存入平台 SecretStore，备份时默认进入受保护区；明文导出必须经过显式选择、风险提示和二次确认。
+- 凭据存入平台 SecretStore，备份时默认进入受保护区；明文导出必须经过显式选择、后果说明和执行前核对。
 - 每个 Dataset 有稳定 ID、格式版本、依赖、敏感标记和恢复模式。
 - 导入先写 staging generation，完成结构、摘要和业务校验后原子切换。
 - 升级/降级根据可读写数据版本判断，不只比较插件版本号。
@@ -344,7 +344,7 @@ manifest、Capability、RPC、Kotlin 模型与 TypeScript SDK 从同一契约源
 - UI：所有新 Tool 只有一个声明式入口；简单页面使用 Host renderer，复杂页面使用隔离 WebView renderer，两者共享设计 token 和状态语义。
 - Shizuku：授权 Tool 与能力 Provider 都不在内置注册表中；最小宿主 bridge 只对签名全信任 Provider 开放，不向普通 Tool 暴露通用 Shell。
 - 后台：没有通过常驻 WebView 模拟后台任务的实现。
-- 数据：敏感 Dataset 默认受保护，显式明文必须二次确认；导入支持 staging、校验和回滚。
+- 数据：敏感 Dataset 默认受保护，明文须明确选择并核对后果；导入支持 staging、校验和回滚。
 - 发布：组件仓库分别测试、构建和发布，外层只锁定已验证组合；Provider 必须使用发布者密钥签名，不以本地 Debug key 代替发布验收。
 - 生命周期：覆盖 renderer 冷启动、旋转、前后台恢复与错误外壳，以及任务撤权、超时、重试、并发租约、重启恢复和 Provider 重连。
 - 开发体验：模板、CLI、Mock 和生成绑定使用同一契约源；每次演进应形成可安装、可回滚、可验证的完整工具闭环。

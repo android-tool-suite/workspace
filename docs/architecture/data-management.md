@@ -72,11 +72,9 @@ UI 要求至少 8 位密码。随机 salt/nonce 使相同内容的两次导出�
 - 依赖只在同一 owner 内解析；循环、缺失或重复 ID 均拒绝。
 - 用户可以只恢复明文区，此时不要求密码，也不解密密码区。
 
-导出界面对每项直接提供“不导出／明文／加密”三种状态。导入界面根据本机状态切换：
+导出先用复选框选择内容，再于设置与核对步骤决定文件保护。默认加密整个所选范围，另提供仅敏感内容加密、不加密与逐项自定义；敏感明文在核对页说明后果。浏览数据来源不改变全局任务范围，插件详情入口仅提供当前插件的可操作项目。
 
-- 当前没有数据：`跳过／导入`；
-- 已有数据：`跳过／替换／合并`；
-- 插件未声明合并能力时，合并不可选，并在项目行说明原因。
+导入先读取归档并选择内容，在核对步骤按本机状态和接收方契约提供导入、合并或替换；不支持合并的项目明确说明原因。旧备份声明仅支持替换时，只要数据格式仍兼容，接收方新增的声明式合并规则仍可使用。
 
 宿主私有 `DatasetBridge` 负责判断当前是否已有数据以及可用恢复方式；它只适配已经安装的 format v3 Dataset，不暴露给插件 SDK。
 
@@ -89,7 +87,7 @@ UI 要求至少 8 位密码。随机 salt/nonce 使相同内容的两次导出�
 5. 按 Dataset 依赖顺序调用宿主私有 DatasetBridge，并传入用户选择的 `REPLACE` 或 `MERGE`；DatasetService 负责业务格式校验和 generation 原子切换。
 6. 无论成功失败都删除暂存明文并清零密码。
 
-尚未安装插件时，可同时选择归档中的 format v3 插件包及其 Dataset；先校验并安装包，再重新绑定该包声明的数据契约。包与项目 ID 不符、签名/完整性无效、降级、不兼容数据均中止恢复；包安装会话在数据恢复成功后确认。可捕获的恢复失败会回滚包版本、本次涉及的数据 generation 和宿主设置；generation 检查点保留原始文件，凭据不解密导出。若回滚本身失败，保留检查点并明确报错；不宣称整个多插件归档在进程被强杀或断电时具有跨存储事务原子性。新装插件保持停用，即使备份启用状态为 true 也不自动执行；已经停用的可信 Provider 也不会由备份重新启用，用户须在管理页确认完全信任。普通插件权限不会从归档中自动授予。历史 API1 插件包拒绝安装，可跳过包，仅恢复已安装新版插件兼容的数据。
+尚未安装插件时，可同时选择归档中的 format v3 插件包及其 Dataset；先校验并安装包，再重新绑定该包声明的数据契约。包与项目 ID 不符、签名/完整性无效、降级、不兼容数据均中止恢复；包安装会话在数据恢复成功后确认。可捕获的恢复失败会回滚包版本、本次涉及的数据 generation 和宿主设置；generation 检查点保留原始文件，凭据不解密导出。若回滚本身失败，保留检查点并明确报错；不宣称整个多插件归档在进程被强杀或断电时具有跨存储事务原子性。新装插件保持停用，即使备份启用状态为 true 也不自动执行；已经停用的可信 Provider 也不会由备份重新启用，用户须在插件详情确认完全信任。普通插件权限不会从归档中自动授予。历史 API1 插件包拒绝安装，可跳过包，仅恢复已安装新版插件兼容的数据。
 
 ## 6. 删除边界
 
@@ -109,29 +107,31 @@ UI 要求至少 8 位密码。随机 salt/nonce 使相同内容的两次导出�
 - v3 解析器不猜测未来版本；未知版本明确拒绝。
 - 插件运行时复用项目描述、保护区和完整性语义，并以平台无关接口替换 `Activity` 和 API1 私有路径。
 
-## 8. 旧数据 Dataset 映射
+## 8. 历史数据与当前 Dataset
 
-下表只描述 API1 私有数据迁移到宿主管理 Dataset 的边界；新插件不得直接依赖这些物理路径。
+历史归档按逻辑 owner/item 标识与当前已安装插件的 Dataset 契约匹配，旧路径不构成新插件可访问的文件接口。当前项目及恢复方式由各插件 `src/manifest.template.json` 声明：
 
-| 插件 | Dataset ID | 类别 | 恢复语义 | 依赖 | 旧数据来源与目标 | 敏感 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 无障碍授权 | `accessibility-settings` | SETTINGS | REPLACE | 无 | 旧 `accessibility_grant` 偏好迁移到 format v3 Dataset；当前插件只读写宿主 Dataset | 否 |
-| Phigros | `profiles` | SETTINGS | REPLACE | 无 | 不含明文令牌的档案、选择与主页摘要 | 否 |
-| Phigros | `analysis-data` | DATA | REPLACE | `profiles` | `files/phigros-data-studio/` 中除曲库和临时文件外的数据 | 否 |
-| Phigros | `session-tokens` | SECRET | REPLACE | `profiles` | Keystore 解密后的现有 SessionToken，默认进入密码区 | 是 |
-| Phigros | `song-catalog` | CACHE | REPLACE | 无 | 曲库缓存；默认不选，可重新生成 | 否 |
-| 抽卡分析 | `gacha-settings` | SETTINGS | REPLACE / MERGE | 无 | 受支持的标量与字符串集合；合并保留包内未涉及的键 | 否 |
-| 抽卡分析 | `genshin-records` | DATA | REPLACE / MERGE | 无 | 原神账号、记录与卡池完成状态 | 否 |
-| 抽卡分析 | `starrail-records` | DATA | REPLACE / MERGE | 无 | 星铁账号、记录与卡池完成状态 | 否 |
-| 抽卡分析 | `mihoyo-session` | SECRET | REPLACE | 无 | Keystore 解密后的米游社会话，默认进入密码区 | 是 |
+| 插件 | Dataset ID | 类别 | 支持恢复方式 | 依赖 | 内容 |
+| --- | --- | --- | --- | --- | --- |
+| 无障碍授权 | `accessibility-settings` | SETTINGS | MERGE / REPLACE | 无 | 收藏、显式恢复规则与兼容旧设置 |
+| Phigros | `profiles` | SETTINGS | MERGE / REPLACE | 无 | 档案、选择与小部件摘要设置，不含明文令牌 |
+| Phigros | `analysis-data` | DATA | MERGE / REPLACE | `profiles` | 当前成绩、分析与历史，保留较新当前存档 |
+| Phigros | `session-tokens` | SECRET | MERGE / REPLACE | `profiles` | 登录凭据，合并保留已有凭据 |
+| Phigros | `catalog-versions` | CACHE | MERGE / REPLACE | 无 | 按版本与修订保存的定数快照 |
+| Phigros | `song-catalog` | CACHE | REPLACE | 无 | 可重新获取的整体曲库缓存 |
+| 抽卡分析 | `gacha-settings` | SETTINGS | MERGE / REPLACE | 无 | 账号选择、分析与小部件设置 |
+| 抽卡分析 | `genshin-records` | DATA | MERGE / REPLACE | 无 | 原神账号、记录与卡池完成状态 |
+| 抽卡分析 | `starrail-records` | DATA | MERGE / REPLACE | 无 | 星铁账号、记录与卡池完成状态 |
+| 抽卡分析 | `mihoyo-session` | SECRET | MERGE / REPLACE | 无 | 米游社会话，合并保留已有值 |
+| 抽卡分析 | `record-links` | SECRET | MERGE / REPLACE | 无 | 按游戏与账号保存的链接缓存，保留较新获取值 |
 
-宿主自身使用 `android_tool_suite/app-settings` 与 `android_tool_suite/plugin-enabled-state`。Gradle 缓存、临时文件、WebView Cookie、日志、截图、下载中转、API1 插件包和无法解密的密文占位都不得导出。
+宿主自身使用 `android_tool_suite/app-settings`、`android_tool_suite/plugin-enabled-state` 与 `plugin-package.<pluginId>`。备份不包含 Gradle 缓存、临时文件、WebView Cookie、日志、截图、下载中转、API1 插件包或无法解密的密文占位。
 
 ## 9. 发布验收矩阵
 
 | 场景 | 必须满足 |
 | --- | --- |
-| 导出选择 | 每项同时提供不导出、明文和加密；敏感项默认加密 |
+| 导出选择 | 先选择内容再核对保护方式；敏感明文说明后果，默认保护全部所选项 |
 | 依赖处理 | 选择项自动补齐依赖；取消依赖会同步取消 dependents |
 | 错误密码、截断或篡改 | 认证或完整性检查失败，不修改目标数据，并删除暂存明文 |
 | 空环境恢复 | 先安装 format v3 插件，再恢复所选宿主状态与 Dataset；凭据使用目标 Keystore 重新加密 |
