@@ -16,3 +16,6 @@
 [submodule "plugin-registry"]
 	path = plugin-registry
 	url = https://github.com/android-tool-suite/plugin-registry.git
+[submodule "plugins/wheel-decide"]
+	path = plugins/wheel-decide
+	url = https://github.com/android-tool-suite/plugin-wheel-decide.git

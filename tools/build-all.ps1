@@ -17,6 +17,7 @@ $shizukuRoot = Join-Path $workspaceRoot 'plugins\shizuku-auth'
 $accessibilityRoot = Join-Path $workspaceRoot 'plugins\accessibility-grant'
 $phigrosRoot = Join-Path $workspaceRoot 'plugins\phigros-advisor'
 $gachaRoot = Join-Path $workspaceRoot 'plugins\gacha-analysis'
+$wheelRoot = Join-Path $workspaceRoot 'plugins\wheel-decide'
 $shizukuArtifact = Join-Path $shizukuRoot 'artifacts\shizuku-auth.atsplugin'
 $providerPublicKey = Join-Path $registryRoot 'registry-public.pem'
 $sdkRepository = Join-Path $appRoot 'plugin-sdk\build\repository'
@@ -34,6 +35,7 @@ function Assert-WorkspaceLayout {
         (Join-Path $accessibilityRoot 'settings.gradle'),
         (Join-Path $phigrosRoot 'settings.gradle'),
         (Join-Path $gachaRoot 'settings.gradle'),
+        (Join-Path $wheelRoot 'settings.gradle'),
         $pluginCli,
         $providerPublicKey
     )
@@ -179,9 +181,6 @@ Invoke-Native $gradle.Source (@('-p', $shizukuRoot) + $shizukuProperties + $buil
 if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $shizukuRoot, $sdkProperty, 'testDebugUnitTest')
 }
-if (-not $SkipTests) {
-    Invoke-Native $gradle.Source @('-p', $shizukuRoot, $sdkProperty, 'testDebugUnitTest')
-}
 Invoke-Native $gradle.Source (@('-p', $accessibilityRoot) + $buildTasks)
 if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $phigrosRoot, $sdkProperty, 'testDebugUnitTest')
@@ -191,6 +190,10 @@ if (-not $SkipTests) {
     Invoke-Native $gradle.Source @('-p', $gachaRoot, $sdkProperty, 'testDebugUnitTest')
 }
 Invoke-Native $gradle.Source (@('-p', $gachaRoot, $sdkProperty) + $buildTasks)
+if (-not $SkipTests) {
+    Invoke-Native $gradle.Source @('-p', $wheelRoot, 'testDebugUnitTest')
+}
+Invoke-Native $gradle.Source (@('-p', $wheelRoot) + $buildTasks)
 $artifacts = @(
     [pscustomobject]@{
         Name = 'android-tool-suite-debug.apk'
@@ -211,6 +214,10 @@ $artifacts = @(
     [pscustomobject]@{
         Name = 'gacha-analysis.atsplugin'
         Source = Join-Path $gachaRoot 'artifacts\gacha-analysis.atsplugin'
+    },
+    [pscustomobject]@{
+        Name = 'wheel-decide.atsplugin'
+        Source = Join-Path $wheelRoot 'artifacts\wheel-decide.atsplugin'
     }
 )
 
@@ -250,11 +257,13 @@ $manifest = [ordered]@{
         accessibilityGrant = Get-RepositoryRevision $accessibilityRoot
         phigrosAdvisor = Get-RepositoryRevision $phigrosRoot
         gachaAnalysis = Get-RepositoryRevision $gachaRoot
+        wheelDecide = Get-RepositoryRevision $wheelRoot
         pluginRegistry = Get-RepositoryRevision $registryRoot
     }
     tests = [ordered]@{
         phigrosDebugUnitTest = -not $SkipTests
         gachaDebugUnitTest = -not $SkipTests
+        wheelDecideDebugUnitTest = -not $SkipTests
         registryGeneratorUnitTest = -not $SkipTests
         pluginCliUnitTest = -not $SkipTests
         runtimeContractUnitTest = -not $SkipTests

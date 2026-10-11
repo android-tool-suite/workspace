@@ -2,7 +2,7 @@
 param(
     [string]$Serial,
     [switch]$SkipApp,
-    [ValidateSet('all', 'shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'none')]
+    [ValidateSet('all', 'shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'wheel-decide', 'none')]
     [string]$Plugins = 'all'
 )
 
@@ -70,7 +70,7 @@ if (-not $SkipApp) {
 }
 
 $pluginNames = switch ($Plugins) {
-    'all' { @('shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis') }
+    'all' { @('shizuku-auth', 'accessibility-grant', 'phigros-advisor', 'gacha-analysis', 'wheel-decide') }
     'none' { @() }
     default { @($Plugins) }
 }

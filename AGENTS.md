@@ -4,11 +4,11 @@
 
 本文件适用于 `android-tool-suite/` 下的整个聚合工作区。若子目录以后出现更具体的 `AGENTS.md`，以离目标文件最近的说明为准。
 
-当前工作区由一个外层 Git 超级项目和六个独立 Git 子模块组成，但仍然没有统一的根级 Gradle 工程：
+当前工作区由一个外层 Git 超级项目和七个独立 Git 子模块组成，但仍然没有统一的根级 Gradle 工程：
 
 ```text
 android-tool-suite/
-├─ .gitmodules                    六个子模块的 HTTPS 地址
+├─ .gitmodules                    七个子模块的 HTTPS 地址
 ├─ AGENTS.md                      整个工作区的协作规则
 ├─ tools/                         全量构建、状态检查与设备安装工具
 ├─ artifacts/                     全量构建集中产物（Git 忽略）
@@ -32,15 +32,17 @@ android-tool-suite/
    │  └─ artifacts/               accessibility-grant.atsplugin
    ├─ phigros-advisor/            Phigros Data Studio 插件仓库
    │  └─ artifacts/               phigros-advisor.atsplugin
-   └─ gacha-analysis/             跃迁与祈愿分析插件仓库
-      └─ artifacts/               gacha-analysis.atsplugin
+   ├─ gacha-analysis/             跃迁与祈愿分析插件仓库
+   │  └─ artifacts/               gacha-analysis.atsplugin
+   └─ wheel-decide/               转盘决策插件仓库
+      └─ artifacts/               wheel-decide.atsplugin
 ```
 
-可以在工作区根目录使用 Git 管理 `.gitmodules`、工作区文档和子模块指针，但不要假定存在根级 Gradle 任务。源码状态检查和提交仍以 `app/`、`plugin-registry/`、`plugins/shizuku-auth/`、`plugins/accessibility-grant/`、`plugins/phigros-advisor/`、`plugins/gacha-analysis/` 中相应的子仓库为边界；应用和插件继续独立维护版本与更新日志，索引仓库则维护生成器、签名协议和 Pages 发布。跨仓库修改时，先分别完成并提交子仓库，再在外层仓库提交更新后的子模块指针。
+可以在工作区根目录使用 Git 管理 `.gitmodules`、工作区文档和子模块指针，但不要假定存在根级 Gradle 任务。源码状态检查和提交仍以 `app/`、`plugin-registry/`、`plugins/shizuku-auth/`、`plugins/accessibility-grant/`、`plugins/phigros-advisor/`、`plugins/gacha-analysis/`、`plugins/wheel-decide/` 中相应的子仓库为边界；应用和插件继续独立维护版本与更新日志，索引仓库则维护生成器、签名协议和 Pages 发布。跨仓库修改时，先分别完成并提交子仓库，再在外层仓库提交更新后的子模块指针。
 
 外层仓库是集成工作区，不是日常功能开发仓库。开发单个宿主或插件时，允许只克隆和使用对应独立仓库；普通组件提交不需要同步更新外层 gitlink。只有联调本地 SDK、执行完整兼容性验收、集中交付，或明确提升已验证组合时才使用外层工作区。更新 gitlink 前必须确认组件提交已推送且通过对应验证；外层提交只描述集成基线变化，不重复承载组件功能内容。
 
-六个子模块的 `origin` 和 `.gitmodules` 都使用 HTTPS：
+七个子模块的 `origin` 和 `.gitmodules` 都使用 HTTPS：
 
 - `https://github.com/android-tool-suite/app.git`
 - `https://github.com/android-tool-suite/plugin-registry.git`
@@ -48,6 +50,7 @@ android-tool-suite/
 - `https://github.com/android-tool-suite/plugin-accessibility-grant.git`
 - `https://github.com/android-tool-suite/plugin-phigros-advisor.git`
 - `https://github.com/android-tool-suite/plugin-gacha-analysis.git`
+- `https://github.com/android-tool-suite/plugin-wheel-decide.git`
 
 首次检出使用 `git clone --recurse-submodules`；已有检出使用 `git submodule sync --recursive` 和 `git submodule update --init --recursive`。不要把子模块改回 SSH URL，也不要直接提交只有外层 gitlink 更新、却没有对应远端子仓库提交的状态。
 
@@ -74,7 +77,7 @@ android-tool-suite/
 .\tools\build-all.ps1
 ```
 
-该脚本构建主体、签名打包合并 UI 与底层能力的 Shizuku 插件、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，同时运行插件索引生成器测试，最后把五个产物、`SHA256SUMS.txt` 和带六个子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
+该脚本构建主体、签名打包合并 UI 与底层能力的 Shizuku 插件、发布当前临时 SDK、测试并构建插件，验证 `.atsplugin` 内容，同时运行插件索引生成器测试，最后把六个产物、`SHA256SUMS.txt` 和带七个子模块提交号的 `build-manifest.json` 集中复制到外层 `artifacts/`。只有所有构建与测试成功后才刷新外层产物。`-NoClean` 仅用于开发增量构建，`-SkipTests` 仅用于临时排查，不得用于正式验收。
 
 主体应用：
 
@@ -93,6 +96,8 @@ gradle -p plugins\phigros-advisor testDebugUnitTest
 gradle -p plugins\phigros-advisor clean collectArtifacts
 gradle -p plugins\gacha-analysis testDebugUnitTest
 gradle -p plugins\gacha-analysis clean collectArtifacts
+gradle -p plugins\wheel-decide testDebugUnitTest
+gradle -p plugins\wheel-decide clean collectArtifacts
 ```
 
 验证尚未正式发布的 SDK 改动时，优先使用主体仓库内的临时 Maven 仓库，避免插件误用旧版 Maven Local 缓存：
@@ -111,7 +116,7 @@ gradle -p plugins\gacha-analysis `
   testDebugUnitTest clean collectArtifacts
 ```
 
-注意：对 `app` 执行 `clean` 会删除 `plugin-sdk/build/repository`，所以全量验证时应先构建主体，再发布临时 SDK，最后构建四个插件。
+注意：对 `app` 执行 `clean` 会删除 `plugin-sdk/build/repository`，所以全量验证时应先构建主体，再发布临时 SDK，最后构建五个插件。
 
 正式本地产物分别位于：
 
@@ -120,6 +125,7 @@ gradle -p plugins\gacha-analysis `
 - `plugins/accessibility-grant/artifacts/accessibility-grant.atsplugin`
 - `plugins/phigros-advisor/artifacts/phigros-advisor.atsplugin`
 - `plugins/gacha-analysis/artifacts/gacha-analysis.atsplugin`
+- `plugins/wheel-decide/artifacts/wheel-decide.atsplugin`
 
 全量流程还会把它们集中到外层 `artifacts/`，设备安装和对外交付优先使用这组带校验和与构建清单的集中产物。
 
@@ -139,13 +145,13 @@ gradle -p plugins\gacha-analysis `
 - 宿主和插件的 UI 设计、实现与评审必须同时参考根目录的 `docs/design/ui-guidelines.md` 和 `docs/design/ui-preview.html`：前者是设计模式、交互和评审规范正文，后者是浅色／深色、宿主页、插件页、组件与响应式布局的样例示范。不得把 HTML 当成脱离规范正文的像素模板，也不得继续采用两份文件中已明确放弃的旧方案。
 - 宿主和插件界面应复用 `app/plugin-sdk/.../SuiteDesignSystem.kt`、`SuiteTokens.kt`、`SuiteSettings.kt`、`SuiteStates.kt` 及现有 Compose 组件，保持所有页面、空态、加载态、错误态、拖拽态和弹窗的视觉与交互一致，不要在单个插件中复制一套相近但不同的设计 token。`UiKit.java` 仅为已有第三方插件的二进制兼容保留，新界面不得使用。
 - 如果实际 Compose 设计系统、已经交付的宿主行为、UI 规范正文或 HTML 样例之间出现差异，先以当前公开 SDK token／组件和已交付行为核实设计基线，再在同一次相关修改中同步更新规范与预览，避免文档继续描述未实施方案。
-- 修改 `plugin-sdk` 的公开 API 时，检查二进制/源码兼容性，同时验证主体和四个插件。发布 SDK 变更时更新 `app/gradle.properties` 中的 `pluginSdkVersion`，并按需要同步插件的 `atsPluginSdkVersion`。
-- 每个子仓库独立维护根目录下的 `CHANGELOG.md`：`app/CHANGELOG.md`、`plugins/shizuku-auth/CHANGELOG.md`、`plugins/accessibility-grant/CHANGELOG.md`、`plugins/phigros-advisor/CHANGELOG.md`、`plugins/gacha-analysis/CHANGELOG.md`。插件仓库缺少该文件时，在下一次需要提升版本的修改中创建。更新日志只记录该子仓库的变化，不把多个仓库的发布内容混写在一起。
+- 修改 `plugin-sdk` 的公开 API 时，检查二进制/源码兼容性，同时验证主体和五个插件。发布 SDK 变更时更新 `app/gradle.properties` 中的 `pluginSdkVersion`，并按需要同步插件的 `atsPluginSdkVersion`。
+- 每个子仓库独立维护根目录下的 `CHANGELOG.md`：`app/CHANGELOG.md`、`plugins/shizuku-auth/CHANGELOG.md`、`plugins/accessibility-grant/CHANGELOG.md`、`plugins/phigros-advisor/CHANGELOG.md`、`plugins/gacha-analysis/CHANGELOG.md`、`plugins/wheel-decide/CHANGELOG.md`。插件仓库缺少该文件时，在下一次需要提升版本的修改中创建。更新日志只记录该子仓库的变化，不把多个仓库的发布内容混写在一起。
 - 应用和插件的更新日志只记录产品本身的变化；分支整理、CI、标签命名、发布流程等仓库与开发维护改动写入提交说明或开发文档，不写入 `CHANGELOG.md`。
 - 版本提升以发布状态为准，不以是否已经提交为准。当前版本尚未发布时，后续修改可以继续沿用该版本号和 `versionCode`，并将变更合并到同一版本的 `CHANGELOG.md`；已提交或推送到开发分支不等于已发布。当前版本已经发布时，修复、功能、依赖或 SDK/API 变化、用户可感知的 UI/交互变化以及产物行为变化应在提交前提升版本；纯文档、纯测试、注释/格式化、仓库元数据或不影响运行行为与交付产物的内部整理可以不提升版本。无法确定发布状态时，先核实发布记录。
 - Debug、预发布和正式版发布均算已发布，包括滚动 Debug 渠道和历史快照；核实时检查发布产物对应的版本号与 `versionCode`，不能仅凭没有正式版本标签判断尚未发布。本地构建或设备安装本身不算发布。
 - 主体版本位于 `app/app/build.gradle` 的 `versionCode`、`versionName`；插件版本位于各自 `build.gradle` 的 `pluginVersionName`、`versionCode`。每次发布版本都递增整数 `versionCode`，并按改动性质更新 `versionName`。`manifest.template.json` 的版本由构建任务注入，不要维护第二份硬编码版本。
-- `app/plugin-sdk` 的发布版本位于 `app/gradle.properties` 的 `pluginSdkVersion`。公开 API 或发布内容变化时更新它，并同步检查四个插件的 `atsPluginSdkVersion`；SDK 变化仍记录在主体仓库自己的更新日志中。
+- `app/plugin-sdk` 的发布版本位于 `app/gradle.properties` 的 `pluginSdkVersion`。公开 API 或发布内容变化时更新它，并同步检查五个插件的 `atsPluginSdkVersion`；SDK 变化仍记录在主体仓库自己的更新日志中。
 - 每次准备提交子仓库前，都要把当前版本字段与该子仓库 `HEAD` 比较，并核实发布状态。版本号发生变化或沿用未发布版本时，都必须先完善对应 `CHANGELOG.md`，完整归纳该版本的新增、优化、修复、兼容性或升级注意事项；未发布版本标注“未发布”，首次发布（包括 Debug／预发布）时填写发布日期。版本号没有变化时，确认属于沿用未发布版本或无需提升版本的情形。
 - 如果工作区开始时已有未提交修改，应按整个待提交改动判断版本和更新日志，不能只评估本轮新增的几行。
 - 当前 CHANGELOG 中的各版本段落分别保留，不再合并不同版本（包括未发布版本），也不因后续迭代撤回方案而删除原版本记录。已经形成的历史合并结果保持原样，不拆分或恢复其已合并的中间版本。
@@ -163,8 +169,9 @@ gradle -p plugins\gacha-analysis `
 - 仅无障碍插件：运行该仓库的 `clean collectArtifacts`，并验证 format v3 包内容。
 - 仅 Phigros 插件：运行 `testDebugUnitTest` 和 `clean collectArtifacts`。
 - 仅抽卡分析插件：运行 `testDebugUnitTest` 和 `clean collectArtifacts`。
+- 仅转盘决策插件：运行 `testDebugUnitTest` 和 `clean collectArtifacts`。
 - 仅插件索引：运行 `python -m unittest discover -s plugin-registry/tests -v` 和对应仓库的 `git diff --check`。
-- `plugin-sdk` 或跨仓库协议变更：主体、四个插件全部重新构建，并运行 Phigros 与抽卡分析单元测试。
+- `plugin-sdk` 或跨仓库协议变更：主体、五个插件全部重新构建，并运行 Phigros、抽卡分析与转盘决策单元测试。
 - 跨仓库或正式全量验收：运行 `.\tools\build-all.ps1`，不使用 `-SkipTests`。
 - 文档或配置改动：至少运行对应仓库的 `git diff --check`，并核对示例命令与当前目录结构一致。
 - 外层 CI 只验证 gitlink 锁定的组件组合，不替代各组件仓库自己的最小充分构建和测试。
@@ -214,13 +221,16 @@ adb -s <实体设备序列号> install -r -t .\app\artifacts\android-tool-suite-
 .\app\tools\adb-debug.ps1 -Serial <实体设备序列号> `
   -Command import-plugin `
   -PluginFile .\plugins\gacha-analysis\artifacts\gacha-analysis.atsplugin
+.\app\tools\adb-debug.ps1 -Serial <实体设备序列号> `
+  -Command import-plugin `
+  -PluginFile .\plugins\wheel-decide\artifacts\wheel-decide.atsplugin
 ```
 
 只安装本次受影响且已经重新构建的产物；若主体与插件都变化，先安装主体 APK，再导入插件。如果连接了多个实体设备，逐个指定 serial。安装完成后请用户进行真机手动验收，不要把一次自动化或模拟器通过表述为已经完成真机验收。
 
 ## 清理、Git 与提交
 
-- 开始前在外层仓库运行 `git status --short`，并分别使用 `git -C app status --short`、`git -C plugin-registry status --short`、`git -C plugins/shizuku-auth status --short`、`git -C plugins/accessibility-grant status --short`、`git -C plugins/phigros-advisor status --short`、`git -C plugins/gacha-analysis status --short` 检查子仓库，保留用户已有的未提交修改；不要覆盖或回滚无关差异。
+- 开始前在外层仓库运行 `git status --short`，并分别使用 `git -C app status --short`、`git -C plugin-registry status --short`、`git -C plugins/shizuku-auth status --short`、`git -C plugins/accessibility-grant status --short`、`git -C plugins/phigros-advisor status --short`、`git -C plugins/gacha-analysis status --short`、`git -C plugins/wheel-decide status --short` 检查子仓库，保留用户已有的未提交修改；不要覆盖或回滚无关差异。
 - `.gradle/`、`.kotlin/`、各组件的标准 Gradle `build/`、`temp/` 中的一次性文件和临时截图通常可重新生成；清理前仍应确认路径归属。外部研究仓库放在根级 `workspace/`，不要与 Gradle输出混放；正式集中产物保留在 `artifacts/`。
 - `local.properties`、IDE 配置、缓存和构建目录不得提交。
 - 用户要求整理并提交时，把“删除可再生产物”和“功能修改”分开处理；按仓库和关注点拆成多个小提交，不要生成跨多个仓库的单体提交。

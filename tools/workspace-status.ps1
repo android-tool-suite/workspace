@@ -139,6 +139,12 @@ $components = @(
         RelativePath = 'plugins/gacha-analysis'
         Path = (Join-Path $workspaceRoot 'plugins\gacha-analysis')
         Build = (Join-Path $workspaceRoot 'plugins\gacha-analysis\build.gradle')
+    },
+    [pscustomobject]@{
+        Name = 'wheel-decide'
+        RelativePath = 'plugins/wheel-decide'
+        Path = (Join-Path $workspaceRoot 'plugins\wheel-decide')
+        Build = (Join-Path $workspaceRoot 'plugins\wheel-decide\build.gradle')
     }
 )
 
