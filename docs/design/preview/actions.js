@@ -206,10 +206,11 @@ function act(action,element){
   case 'phi-sync':syncPhi();break;
   case 'phi-scores':S.phi.scores=a;render();break;
   case 'phi-level':S.phi.levels=S.phi.levels.includes(a)?S.phi.levels.filter(v=>v!==a):[...S.phi.levels,a];render();break;
-  case 'phi-reset-filters':Object.assign(S.phi,{query:'',levels:['IN','AT'],constantMin:'',constantMax:'',grades:[],fc:'any',ap:'any',clear:false});render();break;
+  case 'phi-reset-filters':Object.assign(phiDraftState(),{query:'',levels:['IN','AT'],constantMin:'',constantMax:'',grades:[],onlyPush:false,clear:false});render();break;
   case 'phi-grade':phiDraftState().grades=a==='any'?[]:phiDraftState().grades.includes(a)?phiDraftState().grades.filter(g=>g!==a):[...phiDraftState().grades,a];render();break;
-  case 'phi-completion':S.phi[a]=b;render();break;
-  case 'phi-stat':Object.assign(S.phi,{scores:'all',levels:[a],query:'',constantMin:'',constantMax:'',grades:[],fc:b==='FC'?'yes':'any',ap:b==='AP'?'yes':'any',clear:b==='Clear'});go('phi/scores',{replace:true});break;
+  case 'phi-preset':{const preset=PHI_GRADE_PRESETS.find(p=>p.id===a);if(preset){Object.assign(phiDraftState(),{grades:[...preset.grades],clear:false});render();}break;}
+  case 'phi-only-push':{const p=phiDraftState();if(p.onlyPush||phiHasData()){p.onlyPush=!p.onlyPush;render();}break;}
+  case 'phi-stat':Object.assign(S.phi,{scores:'all',levels:[a],query:'',constantMin:'',constantMax:'',grades:b==='FC'?['Phi','FC']:b==='AP'?['Phi']:[],onlyPush:false,clear:b==='Clear'});go('phi/scores',{replace:true});break;
   case 'phi-range':S.phi.days=Number(a);S.phi.point=null;render();break;
   case 'phi-point':S.phi.point=a;render();break;
   case 'phi-song-history':showOverlay('phi-song-history',{id:a,level:b});break;
@@ -217,6 +218,14 @@ function act(action,element){
   case 'catalog-reset':Object.assign(S.phi,{catalogQuery:'',catalogLevels:['IN','AT'],catalogMin:'',catalogMax:''});render();break;
   case 'catalog-band':phiDraftState().catalogMin=a;phiDraftState().catalogMax=a===''?'':(Number(a)+.9).toFixed(1);render();break;
   case 'catalog-update':{startTask({title:'更新定数表',owner:'phi',kind:'sync',rows:[{id:'catalog',name:'定数表',owner:'Phigros'}],stages:['读取发布的定数信息','检查曲目与难度数据','保存本地定数表'],context:{target:'phi/catalog',targetLabel:'查看定数表'},commit:()=>{S.phi.catalogUpdated=true;}});break;}
+  case 'catalog-compare':S.phi.catalogCompare=!S.phi.catalogCompare;S.phi.catalogChangesOnly=false;render();break;
+  case 'catalog-swap':{const target=S.phi.catalogVersion;S.phi.catalogVersion=S.phi.catalogBefore;S.phi.catalogBefore=target;render();break;}
+  case 'catalog-changes-only':S.phi.catalogChangesOnly=!S.phi.catalogChangesOnly;render();break;
+  case 'catalog-version':S.phi.catalogVersion=Number(a);render();break;
+  case 'catalog-before':S.phi.catalogBefore=Number(a);render();break;
+  case 'catalog-sort':toast('预览：已按调整数量排序');break;
+  case 'catalog-version-detail':showOverlay('catalog-version-detail',{version:Number(a),before:154});break;
+  case 'phi-history-mode':S.phi.historyMode=a;render();break;
   case 'phi-image':S.phi.image=a;go('phi/image');break;
   case 'phi-image-kind':S.phi.image=a;render();break;
   case 'save-demo-image':downloadDemoImage();break;
@@ -350,7 +359,7 @@ document.addEventListener('change',e=>{const el=e.target;
  if(key?.startsWith('flow-import-mode:')){setFlowMode(key.split(':')[1],el.value);return;}
  if(key==='gacha-filter-pool'){S.gacha.filterPool=el.value;S.gacha.page=0;render();return;}
  if(key==='gacha-filter-rarity'){S.gacha.rarity=Number(el.value);S.gacha.page=0;render();return;}
- if(key==='phi-history-days')S.phi.historyDays=Number(el.value);else if(key==='phi-server')S.phi.server=el.value;else if(key==='gacha-log-range')S.gacha.logRange=el.value;else if(key?.startsWith('registry-version:')){S.registryVersions??={};S.registryVersions[key.split(':')[1]]=el.value;render();return;}else return;render();
+ if(key==='phi-history-days')S.phi.historyDays=Number(el.value);else if(key==='catalog-version'||key==='catalog-before'){S.phi[key==='catalog-version'?'catalogVersion':'catalogBefore']=Number(el.value);render();}else if(key==='phi-server')S.phi.server=el.value;else if(key==='gacha-log-range')S.gacha.logRange=el.value;else if(key?.startsWith('registry-version:')){S.registryVersions??={};S.registryVersions[key.split(':')[1]]=el.value;render();return;}else return;render();
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){e.preventDefault();if(dragState){endDrag(true);return;}if(S.sortMode&&!S.overlay){S.sortMode=null;render();return;}back();return;}

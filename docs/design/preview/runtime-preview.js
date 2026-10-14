@@ -80,7 +80,7 @@ function finishHeldReads(){for(const read of [...localReads.values()])if(read.he
 function resetPluginView(owner){
  if(owner==='phi'||owner==='gacha'){S.runtime.web[owner]='idle';delete S.runtime.published[owner];}
  if(owner==='phi'){
-  const fresh=initialState().phi;for(const key of ['scores','query','levels','constantMin','constantMax','grades','fc','ap','catalogQuery','catalogLevels','catalogMin','catalogMax','days','historyDays','point','image','login','loginStage','loginName'])S.phi[key]=clone(fresh[key]);
+  const fresh=initialState().phi;for(const key of ['scores','query','levels','constantMin','constantMax','grades','onlyPush','clear','catalogQuery','catalogLevels','catalogMin','catalogMax','catalogVersion','catalogBefore','catalogCompare','catalogChangesOnly','days','historyDays','historyMode','point','image','login','loginStage','loginName'])S.phi[key]=clone(fresh[key]);
   S.runtime.phiPages={analysis:'idle',catalog:'idle'};S.runtime.phiAvailable={};S.runtime.phiSecret='idle';S.runtime.phiPush={status:'idle',profile:null,targets:null,source:null,warning:false};
  }else if(owner==='gacha'){
   const fresh=initialState().gacha;for(const key of ['pool','detailFilter','query','filterPool','rarity','page','source','draft','linkReady','qr','analysisDraft'])S.gacha[key]=clone(fresh[key]);
